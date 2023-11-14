@@ -48,7 +48,7 @@ def main():
     test['year'] = pred
 
     logging.info("Writing prediction file")
-    test.to_json("predicted.json", orient='records', indent=2)
+    test.to_json("predictions/predicted_chatgptrandomforest.json", orient='records', indent=2)
     
     end_time = time.time()  # End the timer
     total_time = end_time - start_time

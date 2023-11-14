@@ -34,7 +34,7 @@ def main():
     pred = ridge.predict(test)
     test['year'] = pred
     logging.info("Writing prediction file")
-    test.to_json("predicted.json", orient='records', indent=2)
+    test.to_json("predictions/predicted_baseline.json", orient='records', indent=2)
     
 main()
 
