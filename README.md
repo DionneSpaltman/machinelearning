@@ -1,2 +1,3 @@
 ## Student names: 
-Dionne Spaltman 
+Dionne Spaltman
+Fabian Waldmann 
