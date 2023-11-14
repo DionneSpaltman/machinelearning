@@ -1,5 +1,5 @@
 ## Student names: 
 Dionne Spaltman
-Fabian and Waldmann
+Fabian Waldmann
 Beāte Abāšina
 Kenan Sadhu
