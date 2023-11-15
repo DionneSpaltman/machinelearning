@@ -1,0 +1,10 @@
+#%%
+import pandas as pd
+# describing the distribution of the year
+x = pd.read_json('/Users/fabianwaldmann/machinelearning/machinelearning/machinelearning/train.json')
+x.describe()
+
+# %%
+import numpy as np
+
+# %%
