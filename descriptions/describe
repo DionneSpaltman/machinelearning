@@ -1,5 +1,8 @@
 #%%
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+#%%
 # describing the distribution of the year
 x = pd.read_json('/Users/fabianwaldmann/machinelearning/machinelearning/machinelearning/train.json')
 x.describe()
@@ -8,6 +11,14 @@ print(x.shape)
 print(x.info())
 print(x.head())
 # %%
-import numpy as np
+plt.hist(x, bins=30, density=True, alpha=0.7, color='blue', edgecolor='black')
+
+# Add labels and a title
+plt.xlabel('Value')
+plt.ylabel('Frequency')
+plt.title('Distribution Plot')
+
+# Show the plot
+plt.show()
 
 # %%
