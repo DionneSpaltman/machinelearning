@@ -5,16 +5,19 @@ import matplotlib.pyplot as plt
 #%%
 # describing the distribution of the year
 x = pd.read_json('/Users/fabianwaldmann/machinelearning/machinelearning/machinelearning/train.json')
-x.describe()
+print(x.describe())
+print(x.columns)
+x_year = x["year"]
+print(x_year)
 #%%
 print(x.shape)
 print(x.info())
 print(x.head())
 # %%
-plt.hist(x, bins=30, density=True, alpha=0.7, color='blue', edgecolor='black')
+plt.hist(x_year, bins=50, density=True, alpha=0.7, color='blue', edgecolor='black')
 
 # Add labels and a title
-plt.xlabel('Value')
+plt.xlabel('Year')
 plt.ylabel('Frequency')
 plt.title('Distribution Plot')
 
