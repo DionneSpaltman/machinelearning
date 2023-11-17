@@ -7,6 +7,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 from sklearn.dummy import DummyRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor 
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error
 
@@ -25,13 +27,19 @@ def main():
 
     # Feature extraction for publisher and title 
     featurizer = ColumnTransformer(
+        # transformers=[("publisher", CountVectorizer(), "publisher"),
+        # ("title", CountVectorizer(), "title"), ("ENTRYTYPE", CountVectorizer(), "ENTRYTYPE")], 
         transformers=[("publisher", CountVectorizer(), "publisher"),
         ("title", CountVectorizer(), "title")], 
         remainder='drop')
     
     # Create a pipeline 
     dummy = make_pipeline(featurizer, DummyRegressor(strategy='mean'))
-    ridge = make_pipeline(featurizer, Ridge())
+    #ridge = make_pipeline(featurizer, DecisionTreeRegressor())
+    #ridge = make_pipeline(featurizer, Ridge())
+    ridge = make_pipeline(featurizer, RandomForestRegressor(n_estimators=10, n_jobs=-1))
+
+    logging.info("Decision")
     logging.info("Fitting models")
     dummy.fit(train.drop('year', axis=1), train['year'].values)
     ridge.fit(train.drop('year', axis=1), train['year'].values)
