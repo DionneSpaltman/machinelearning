@@ -13,7 +13,9 @@ print(data.info())
 # Summary statistics for numerical fields
 print(data.describe())
 
+
 # YEAR COLUMN
+
 
 # Distribution of the 'year' field
 print(data['year'].value_counts())
@@ -115,3 +117,60 @@ plt.show()
 
 # Since there are 8200 NA from 65000 items, the decision is not as easy
 # There are 3 options: impute the missing data, delete the 8200 instances, or mark all 8200 of them as 'unknown'
+
+
+# AUTHOR COLUMN
+
+# Flatten the list of authors
+all_authors = set()
+for authors_list in data['author'].dropna():
+    all_authors.update(authors_list)
+
+len(all_authors)
+# Now all_authors contains all unique authors
+
+from collections import Counter
+
+# Initialize a Counter object to hold author frequencies
+author_frequencies = Counter()
+
+# Iterate through the author lists and update the counter
+for authors_list in data['author'].dropna():
+    author_frequencies.update(authors_list)
+
+# Now author_frequencies contains the count of each author
+author_frequencies
+
+# Determine the number of top authors you want to consider, e.g., top 100
+num_top_authors = 100
+
+# Get the most common authors
+most_common_authors = author_frequencies.most_common(num_top_authors)
+
+# Print the most common authors
+for author, count in most_common_authors:
+    print(f"{author}: {count}")
+
+most_common_authors
+
+# Assuming 'most_common_authors' contains your top authors
+top_authors = [author for author, count in most_common_authors]
+
+# Dictionary to hold year distribution data for each top author
+year_distributions = {}
+
+for author in top_authors:
+    # Filter data for the current author
+    author_data = data[data['author'].apply(lambda x: author in x if isinstance(x, list) else False)]
+    
+    # Get year distribution for this author
+    year_distributions[author] = author_data['year'].describe()
+
+year_distributions
+
+# Print the year distribution for each top author
+for author, distribution in year_distributions.items():
+    print(f"Year distribution for {author}:")
+    print(distribution, "\n")
+    
+
