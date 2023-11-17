@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 #%%
-x = pd.read_json('/Users/fabianwaldmann/machinelearning/machinelearning/machinelearning/train.json')
+x = pd.read_json('../train.json')
 print(x.describe())
 print(x.columns)
 x_year = x["year"]
