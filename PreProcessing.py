@@ -613,3 +613,63 @@ print(f"Standard Deviation of MAE from cross-validation: {std_dev_mae}")
 # Average MAE from Cross-Validation = 3.44, STDev 0.05
 # Cross Validation Seems to Indicate no overfitting. If anything, in some split, 
 # the MAE can go as low as 3.39
+
+
+# TRYING OTHER REGRESSION METHODS
+
+# Linear Regression
+
+from sklearn.linear_model import LinearRegression
+
+linear_model = LinearRegression()
+linear_model.fit(X_train, y_train)
+y_pred = linear_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Linear Regression MAE: {mae}")
+# MAE: 4.17
+
+# Ridge Regression
+
+from sklearn.linear_model import Ridge
+
+ridge_model = Ridge(alpha=1.0)  # alpha is the regularization strength
+ridge_model.fit(X_train, y_train)
+y_pred = ridge_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Ridge Regression MAE: {mae}")
+# MAE: 4.17
+
+# Lasso Regression
+
+from sklearn.linear_model import Lasso
+
+lasso_model = Lasso(alpha=0.1)
+lasso_model.fit(X_train, y_train)
+y_pred = lasso_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Lasso Regression MAE: {mae}")
+# MAE: 5.89
+
+# Support Vector Regression
+from sklearn.svm import SVR
+
+svr_model = SVR(C=1.0, epsilon=0.2)  # C is the regularization parameter
+svr_model.fit(X_train, y_train)
+y_pred = svr_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"SVR MAE: {mae}")
+
+# Took so long (almost 1h), MAE: 3.94
+
+# Gradient Boosting Regression
+from sklearn.ensemble import GradientBoostingRegressor
+
+gbr_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=3)
+gbr_model.fit(X_train, y_train)
+y_pred = gbr_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Gradient Boosting MAE: {mae}")
+
+# MAE: 4.42
+
+# None of the other regression methods get a better score than random forest.
