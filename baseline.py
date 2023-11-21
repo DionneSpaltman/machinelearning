@@ -1,3 +1,12 @@
+"""
+This is the baseline code without any changes
+It works
+
+Results
+INFO:root:Mean baseline MAE: 7.8054390754858805
+INFO:root:Ridge regress MAE: 5.812323459899639
+"""
+
 import pandas as pd
 import logging
 import json

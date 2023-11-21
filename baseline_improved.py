@@ -1,3 +1,11 @@
+"""
+Baseline code but we improved it slightly
+- Added comments to split up the code 
+- Used the RandomForestRegressor instead of the Ridge Regressor 
+
+"""
+
+
 import pandas as pd
 import logging
 import json

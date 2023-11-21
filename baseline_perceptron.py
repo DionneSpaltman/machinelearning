@@ -1,4 +1,8 @@
-# doesn't work yet
+"""
+Baseline algorithm with perceptron
+
+Does not work yet 
+"""
 
 import pandas as pd
 import logging
