@@ -2,7 +2,7 @@ import pandas as pd
 import logging
 import json
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import make_pipeline
 from sklearn.dummy import DummyRegressor
@@ -28,8 +28,8 @@ def main():
     featurizer = ColumnTransformer(
         # transformers=[("publisher", CountVectorizer(), "publisher"),
         # ("title", CountVectorizer(), "title"), ("ENTRYTYPE", CountVectorizer(), "ENTRYTYPE")], 
-        transformers=[("publisher", CountVectorizer(), "publisher"),
-        ("title", CountVectorizer(), "title")], 
+        transformers=[("publisher", TfidfVectorizer(), "publisher"),
+        ("title", TfidfVectorizer(), "title")], 
         remainder='drop')
     
     # Create a pipeline 
