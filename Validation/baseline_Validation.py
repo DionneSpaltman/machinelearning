@@ -2,6 +2,7 @@
 import pandas as pd
 import logging
 import json
+from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.compose import ColumnTransformer
@@ -11,6 +12,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor 
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error
+import time
 
 def main():
     # Set logging to info 
@@ -23,7 +25,7 @@ def main():
     logging.info("Splitting validation")
 
     # Split the training data into training data and validation data 
-    train, val = train_test_split(train, stratify=train['year'], test_size =0.2, random_state=123)
+    train, val = train_test_split(train, stratify=train['year'], test_size = 0.05, random_state=123)
 
     # Feature extraction for publisher and title 
     featurizer = ColumnTransformer(
@@ -35,10 +37,10 @@ def main():
     
     # Create a pipeline 
     dummy = make_pipeline(featurizer, DummyRegressor(strategy='mean'))
-    #ridge = make_pipeline(featurizer, DecisionTreeRegressor())
-    #ridge = make_pipeline(featurizer, Ridge())
-    ridge = make_pipeline(featurizer, RandomForestRegressor(n_estimators=10, n_jobs=-1))
+ #   ridge = make_pipeline(featurizer, DecisionTreeRegressor())
+    ridge = make_pipeline(featurizer, Ridge())
 
+    train_start_time = time.time()
     logging.info("Decision")
     logging.info("Fitting models")
     dummy.fit(train.drop('year', axis=1), train['year'].values)
@@ -57,6 +59,8 @@ def main():
     test['year'] = pred
     logging.info("Writing prediction file")
     test.to_json("predictions/predicted_baseline.json", orient='records', indent=2)
+    train_end_time = time.time()
+    print(f"Training Time: {train_end_time - train_start_time} seconds")
     
 main()
 

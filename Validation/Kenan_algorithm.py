@@ -17,7 +17,7 @@ print(data.describe())
 
 # YEAR COLUMN
 
-
+#%%
 # Distribution of the 'year' field
 print(data['year'].value_counts())
 
@@ -55,7 +55,7 @@ print(data.info())
 entrytype_counts = data[['entrytype_article', 'entrytype_inproceedings', 'entrytype_proceedings']].sum()
 print(entrytype_counts)
 
-
+#%%
 # EDITOR COLUMN
 
 
@@ -432,3 +432,5 @@ print(f"Mean Absolute Error: {mae}")
 
 # Time taken: 6 minutes
 # MAE: 3.53
+
+# %%
