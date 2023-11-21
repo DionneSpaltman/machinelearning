@@ -49,7 +49,7 @@ def main():
     pred = random_forest.predict(test)
     test['year'] = pred
     logging.info("Writing prediction file")
-    test.to_json("dealing with NA/predicted_baseline_improved_random_forest_NA_category.json", orient='records', indent=2)
+    test.to_json("NA/predicted_baseline_improved_random_forest_NA_category.json", orient='records', indent=2)
     
 main()
 
