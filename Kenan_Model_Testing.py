@@ -1,17 +1,4 @@
 """
-Here are how each feature is treated in this file:
-1. Entrytype: One-hot encoded as 3 variables
-2. Editor: too many Missing Values, so it's dropped
-3. Publisher: One-hot encoded as 120 unique variables. the Missing Values are renamed: 'unknown_publisher'
-4. Author: One-hot encoded the authors with 50+ publications. Also, added another feature: Author_count, which is the number of author in each paper
-5. Title: Tf Idf Vectorizer, top 500 words
-6. Abstract: Tf Idf Vectorizer, top 500 words
-
-Then, from those cleaned data, this is what has been done:
-1. Random Forest Regressor, got MAE of 3.53
-2. Feature Importance Analysis
-3. Cross-Validation (5-fold)
-4. Hyperparameter Tuning
 """
 
 
@@ -252,6 +239,57 @@ prolific_authors
 # Now our dataframe has 347 columns..
 data.shape
 
+# CHECKING MODEL SO FAR
+
+# I'll do a simple random forest regression check on the current data, without
+# including the title and abstract column for now
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
+import pandas as pd
+import time
+
+# Sample data loading (replace this with your actual dataset)
+# data = pd.read_csv('your_dataset.csv')
+
+# Exclude title, abstract, and publisher column. Not 
+# X = data.drop(['year', 'title', 'abstract', 'publisher', 'author'], axis=1)
+# y = data['year']
+
+# Split the dataset into training and testing sets
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize the Random Forest Regressor
+# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+
+# Start the timer for training
+# train_start_time = time.time()
+
+# Train the model
+# model.fit(X_train, y_train)
+
+# Stop the timer for training and print the time taken
+# train_end_time = time.time()
+# print(f"Training Time: {train_end_time - train_start_time} seconds")
+
+# Start the timer for prediction
+# predict_start_time = time.time()
+
+# Predict on the testing set
+# y_pred = model.predict(X_test)
+
+# Stop the timer for prediction and print the time taken
+# predict_end_time = time.time()
+# print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
+
+# Calculate Mean Absolute Error
+# mae = mean_absolute_error(y_test, y_pred)
+# print(f"Mean Absolute Error: {mae}")
+
+# The MAE is 6.41 and the time taken is 2 minutes
+# Damn it's even worse than the baseline
+
 
 # TITLE and ABSTRACT COLUMNS
 
@@ -266,6 +304,44 @@ title_tfidf = vectorizer.fit_transform(data['title_processed'])
 title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 title_tfidf_df
 
+# Combining TF-IDF features with other features (excluding raw text columns)
+# X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed'], axis=1), title_tfidf_df], axis=1)
+# y = data['year']
+
+# Splitting the dataset
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Now you can proceed to train a model with X_train and y_train
+# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+
+# Start the timer for training
+# train_start_time = time.time()
+
+# Train the model
+# model.fit(X_train, y_train)
+ 
+# Stop the timer for training and print the time taken
+# train_end_time = time.time()
+# print(f"Training Time: {train_end_time - train_start_time} seconds")
+
+# Start the timer for prediction
+# predict_start_time = time.time()
+
+# Predict on the testing set
+# y_pred = model.predict(X_test)
+
+# Stop the timer for prediction and print the time taken
+# predict_end_time = time.time()
+# print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
+
+# Calculate Mean Absolute Error
+# mae = mean_absolute_error(y_test, y_pred)
+# print(f"Mean Absolute Error: {mae}")
+
+# With tfidf Vectorizer on the Title column, the MAE becomes 5.34 and the
+# Training time is 6 minutes
+# Let me try to do it to the abstract column too
+
 # Lowercase Abstract
 data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
@@ -276,15 +352,52 @@ abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 # Convert 'abstract' TF-IDF to DataFrame
 abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
 
+# Combining TF-IDF features with other features
+# X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
+#               title_tfidf_df, abstract_tfidf_df], axis=1).copy()
+# y = data['year']
 
+# Splitting the dataset
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# NOW, LET'S DO RANDOM FOREST WITH ALL THE FEATURES TREATED
+# Initialize the Random Forest Regressor
+# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
 
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error
-import pandas as pd
-import time
+# Start the training timer
+# train_start_time = time.time()
+
+# Train the model
+# model.fit(X_train, y_train)
+
+# Stop the training timer and print the time taken
+# train_end_time = time.time()
+# print(f"Training Time: {train_end_time - train_start_time} seconds")
+
+# Start the prediction timer
+# predict_start_time = time.time()
+
+# Predict on the testing set
+# y_pred = model.predict(X_test)
+
+# Stop the prediction timer and print the time taken
+# predict_end_time = time.time()
+# print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
+
+# Calculate Mean Absolute Error
+# mae = mean_absolute_error(y_test, y_pred)
+# print(f"Mean Absolute Error: {mae}")
+
+# With tfidf Vectorizer on the Title and Abstract Column, the MAE goes even further down, to 4.40
+
+# Now, back to publisher, the only column that isn't solved yet:
+
+# PUBLISHER COLUMN PART 2
+# Part 1: one-hot encode, and then keep the missing value as 'unknown'
+# Part 2: remove the missing value
+# compare MAE in part 1 and 2
+
+# NOW, LET'S DO RANDOM FOREST AGAIN WITH ALL THE COLUMNS TREATED
+
 
 X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
                title_tfidf_df, abstract_tfidf_df], axis=1).copy()
@@ -360,9 +473,46 @@ plt.xlabel('Year')
 plt.ylabel('Author Count')
 plt.show()
 
+# Let's try again doing the Random Forest without the 'publisher_unknown' feature
+
+# X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher','publisher_Unknown', 'author', 'title_processed', 'abstract_processed'], axis=1),
+#               title_tfidf_df, abstract_tfidf_df], axis=1).copy()
+# y = data['year']
+
+# Splitting the dataset
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize the Random Forest Regressor
+# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+
+# Start the training timer
+# train_start_time = time.time()
+
+# Train the model
+# model.fit(X_train, y_train)
+
+# Stop the training timer and print the time taken
+# train_end_time = time.time()
+# print(f"Training Time: {train_end_time - train_start_time} seconds")
+
+# Start the prediction timer
+# predict_start_time = time.time()
+
+# Predict on the testing set
+# y_pred = model.predict(X_test)
+
+# Stop the prediction timer and print the time taken
+# predict_end_time = time.time()
+# print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
+
+# Calculate Mean Absolute Error
+# mae = mean_absolute_error(y_test, y_pred)
+# print(f"Mean Absolute Error: {mae}")
+
+# Without the publisher_unknown, the MAE Increased to 3.67
+
 
 # HYPERPARAMETER TUNING
-
 
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor
@@ -401,9 +551,47 @@ print(f"Mean Absolute Error with best model: {mae}")
 # With MAE of 3.59
 # The MAE was worse than before, now I'm confused lol
 
+# This one below is still the best one, with the MAE of 3.53. 
+# But if can't be replicated, might indicate overfitting
+
+X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
+               title_tfidf_df, abstract_tfidf_df], axis=1).copy()
+y = data['year']
+
+# Splitting the dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize the Random Forest Regressor
+model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+
+# Start the training timer
+train_start_time = time.time()
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Stop the training timer and print the time taken
+train_end_time = time.time()
+print(f"Training Time: {train_end_time - train_start_time} seconds")
+
+# Start the prediction timer
+predict_start_time = time.time()
+
+# Predict on the testing set
+y_pred = model.predict(X_test)
+
+# Stop the prediction timer and print the time taken
+predict_end_time = time.time()
+print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
+
+# Calculate Mean Absolute Error
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Mean Absolute Error: {mae}")
+
+# Time taken: 6 minutes
+# MAE: 3.53
 
 # CROSS VALIDATION (5-fold)
-
 
 # Initialize the Random Forest Regressor
 model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
@@ -432,56 +620,56 @@ print(f"Standard Deviation of MAE from cross-validation: {std_dev_mae}")
 
 # Linear Regression
 
-# from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression
 
-# linear_model = LinearRegression()
-# linear_model.fit(X_train, y_train)
-# y_pred = linear_model.predict(X_test)
-# mae = mean_absolute_error(y_test, y_pred)
-# print(f"Linear Regression MAE: {mae}")
+linear_model = LinearRegression()
+linear_model.fit(X_train, y_train)
+y_pred = linear_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Linear Regression MAE: {mae}")
 # MAE: 4.17
 
 # Ridge Regression
 
-# from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge
 
-# ridge_model = Ridge(alpha=1.0)  # alpha is the regularization strength
-# ridge_model.fit(X_train, y_train)
-# y_pred = ridge_model.predict(X_test)
-# mae = mean_absolute_error(y_test, y_pred)
-# print(f"Ridge Regression MAE: {mae}")
+ridge_model = Ridge(alpha=1.0)  # alpha is the regularization strength
+ridge_model.fit(X_train, y_train)
+y_pred = ridge_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Ridge Regression MAE: {mae}")
 # MAE: 4.17
 
 # Lasso Regression
 
-# from sklearn.linear_model import Lasso
+from sklearn.linear_model import Lasso
 
-# lasso_model = Lasso(alpha=0.1)
-# lasso_model.fit(X_train, y_train)
-# y_pred = lasso_model.predict(X_test)
-# mae = mean_absolute_error(y_test, y_pred)
-# print(f"Lasso Regression MAE: {mae}")
+lasso_model = Lasso(alpha=0.1)
+lasso_model.fit(X_train, y_train)
+y_pred = lasso_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Lasso Regression MAE: {mae}")
 # MAE: 5.89
 
 # Support Vector Regression
-# from sklearn.svm import SVR
+from sklearn.svm import SVR
 
-# svr_model = SVR(C=1.0, epsilon=0.2)  # C is the regularization parameter
-# svr_model.fit(X_train, y_train)
-# y_pred = svr_model.predict(X_test)
-# mae = mean_absolute_error(y_test, y_pred)
-# print(f"SVR MAE: {mae}")
+svr_model = SVR(C=1.0, epsilon=0.2)  # C is the regularization parameter
+svr_model.fit(X_train, y_train)
+y_pred = svr_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"SVR MAE: {mae}")
 
 # Took so long (almost 1h), MAE: 3.94
 
 # Gradient Boosting Regression
-# from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 
-# gbr_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=3)
-# gbr_model.fit(X_train, y_train)
-# y_pred = gbr_model.predict(X_test)
-# mae = mean_absolute_error(y_test, y_pred)
-# print(f"Gradient Boosting MAE: {mae}")
+gbr_model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=3)
+gbr_model.fit(X_train, y_train)
+y_pred = gbr_model.predict(X_test)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Gradient Boosting MAE: {mae}")
 
 # MAE: 4.42
 
