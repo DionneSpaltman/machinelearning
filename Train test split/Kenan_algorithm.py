@@ -330,6 +330,9 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
 import xgboost as xgb
+import tensorflow as tf
+# from tensorflow.keras.models import Sequential
+# from tensorflow.keras.layers import Dense
 # import lightgbm as lgb
 
 
@@ -344,35 +347,20 @@ y = data['year']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-# model = RandomForestRegressor(n_estimators=100, max_depth = 7, n_jobs=-1, random_state=42)
-# model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) --> 4.20
+model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+
+# model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) 
+# learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) --> 4.20
+# learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42 --> 3.47
+
 # model = AdaBoostRegressor(n_estimators=50, learning_rate=1.0, random_state=42) --> 5.08
 
-model = xgb.XGBRegressor(n_estimators=250, learning_rate=0.1, max_depth=25, random_state=42) 
-
-# Hyperparameter Tuning XGB Regressor
-# n_estimators=100, learning_rate=0.1, max_depth=15, random_state=42 --> 3.55
-# n_estimators=50, learning_rate=0.1, max_depth=15, random_state=42 --> 3.63
-# n_estimators=150, learning_rate=0.1, max_depth=15, random_state=42 --> 3.51
-# n_estimators=250, learning_rate=0.1, max_depth=15, random_state=42 --> 3.47
-# n_estimators=250, learning_rate=0.1, max_depth=25, random_state=42 --> 3.43
-
-# Max_depth
-# n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42 --> 4.20
-# n_estimators=100, learning_rate=0.1, max_depth=7, random_state=42 --> 3.82
-# n_estimators=100, learning_rate=0.1, max_depth=15, random_state=42 --> 3.55
-# n_estimators=100, learning_rate=0.1, max_depth=25, random_state=42 --> 3.48
-# n_estimators=100, learning_rate=0.1, random_state=42 --> 3.89
-
-# learning rate
-# n_estimators=100, learning_rate=0.05, max_depth=15, random_state=42 --> 3.62
-# n_estimators=100, learning_rate=0.2, max_depth=15, random_state=42 --> 3.51
-# n_estimators=100, learning_rate=0.3, max_depth=15, random_state=42 --> 3.499
-# n_estimators=100, learning_rate=0.4, max_depth=50, random_state=42 --3.67
+# model = xgb.XGBRegressor(n_estimators=250, learning_rate=0.1, max_depth=25, random_state=42)
 
 
 # model = lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42) --> did not import library
 # model = CatBoostRegressor(iterations=100, learning_rate=0.1, depth=6, random_state=42, logging_level='Silent') --> did not import library
+
 
 # Start the training timer
 train_start_time = time.time()
