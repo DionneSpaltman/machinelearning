@@ -307,7 +307,6 @@ title_tfidf_df
 # Combining TF-IDF features with other features (excluding raw text columns)
 # X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed'], axis=1), title_tfidf_df], axis=1)
 # y = data['year']
-
 # Splitting the dataset
 # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -398,7 +397,7 @@ abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vect
 
 # NOW, LET'S DO RANDOM FOREST AGAIN WITH ALL THE COLUMNS TREATED
 
-
+'''
 X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
                title_tfidf_df, abstract_tfidf_df], axis=1).copy()
 y = data['year']
@@ -435,43 +434,7 @@ print(f"Mean Absolute Error: {mae}")
 
 # Time taken: 6 minutes
 # MAE: 3.53
-
-
-# FEATURE IMPORTANCE ANALYSIS
-
-
-# Extracting feature importances
-feature_importances = model.feature_importances_
-
-# Matching feature names with their importances
-feature_names = X_train.columns
-importances = pd.Series(feature_importances, index=feature_names)
-
-# Sorting the features by their importance
-sorted_importances = importances.sort_values(ascending=False)
-
-# Visualizing the top 20 most important features
-plt.figure(figsize=(15, 3))
-sorted_importances[:20].plot(kind='bar')
-plt.title('Top 20 Feature Importances in Random Forest Model')
-plt.xlabel('Features')
-plt.ylabel('Importance')
-plt.show()
-
-# The most important feature is "Publisher_Unknown" 
-# (means we should not delete the missing publisher instances)
-# Maybe if we impute it somehow, the prediction will be even better?
-# Author count is also important. Seems like in the more recent years,
-# people collaborate more (number of writers goes up)
-
-# Plotting Author count by year
-plt.figure(figsize=(15, 8))
-sns.boxplot(data=data, x='year', y='author_count')
-plt.xticks(rotation=90)  # Rotate x labels for better readability if needed
-plt.title('Distribution of Author Count Over Years')
-plt.xlabel('Year')
-plt.ylabel('Author Count')
-plt.show()
+'''
 
 # Let's try again doing the Random Forest without the 'publisher_unknown' feature
 
@@ -518,32 +481,32 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor
 
 # Define the parameter grid to search
-param_grid = {
-    'n_estimators': [100, 200, 300, 400, 500],
-    'max_features': ['auto', 'sqrt'],
-    'max_depth': [10, 20, 30, 40, 50, None],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4],
-    'bootstrap': [True, False]
-}
+# param_grid = {
+#    'n_estimators': [100, 200, 300, 400, 500],
+#    'max_features': ['auto', 'sqrt'],
+#    'max_depth': [10, 20, 30, 40, 50, None],
+#    'min_samples_split': [2, 5, 10],
+#    'min_samples_leaf': [1, 2, 4],
+#    'bootstrap': [True, False]
+#}
 
 # Initialize the Random Forest Regressor
-rf = RandomForestRegressor(random_state=42)
+#rf = RandomForestRegressor(random_state=42)
 
 # Initialize the RandomizedSearchCV object
-rf_random_search = RandomizedSearchCV(estimator=rf, param_distributions=param_grid, n_iter=100, cv=5, verbose=2, random_state=42, n_jobs=-1)
+#rf_random_search = RandomizedSearchCV(estimator=rf, param_distributions=param_grid, n_iter=100, cv=5, verbose=2, random_state=42, n_jobs=-1)
 
 # Fit the random search model
-rf_random_search.fit(X_train, y_train)
+#rf_random_search.fit(X_train, y_train)
 
 # Print the best parameters found by RandomizedSearchCV
-print("Best parameters found: ", rf_random_search.best_params_)
+#print("Best parameters found: ", rf_random_search.best_params_)
 
 # Evaluate the best model found on the test set
-best_model = rf_random_search.best_estimator_
-y_pred = best_model.predict(X_test)
-mae = mean_absolute_error(y_test, y_pred)
-print(f"Mean Absolute Error with best model: {mae}")
+#best_model = rf_random_search.best_estimator_
+#y_pred = best_model.predict(X_test)
+#mae = mean_absolute_error(y_test, y_pred)
+#print(f"Mean Absolute Error with best model: {mae}")
 
 # In hyperparameter tuning, the best model is
 # 'n_estimators': 200, 'min_samples_split': 5, 'min_samples_leaf': 1,
@@ -559,7 +522,7 @@ X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 't
 y = data['year']
 
 # Splitting the dataset
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
 # Initialize the Random Forest Regressor
 model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
@@ -618,6 +581,7 @@ print(f"Standard Deviation of MAE from cross-validation: {std_dev_mae}")
 
 # TRYING OTHER REGRESSION METHODS
 
+'''
 # Linear Regression
 
 from sklearn.linear_model import LinearRegression
@@ -671,6 +635,44 @@ y_pred = gbr_model.predict(X_test)
 mae = mean_absolute_error(y_test, y_pred)
 print(f"Gradient Boosting MAE: {mae}")
 
+'''
+
 # MAE: 4.42
 
 # None of the other regression methods get a better score than random forest.
+
+# FEATURE IMPORTANCE ANALYSIS
+
+
+# Extracting feature importances
+feature_importances = model.feature_importances_
+
+# Matching feature names with their importances
+feature_names = X_train.columns
+importances = pd.Series(feature_importances, index=feature_names)
+
+# Sorting the features by their importance
+sorted_importances = importances.sort_values(ascending=False)
+
+# Visualizing the top 20 most important features
+plt.figure(figsize=(15, 3))
+sorted_importances[:20].plot(kind='bar')
+plt.title('Top 20 Feature Importances in Random Forest Model')
+plt.xlabel('Features')
+plt.ylabel('Importance')
+plt.show()
+
+# The most important feature is "Publisher_Unknown" 
+# (means we should not delete the missing publisher instances)
+# Maybe if we impute it somehow, the prediction will be even better?
+# Author count is also important. Seems like in the more recent years,
+# people collaborate more (number of writers goes up)
+
+# Plotting Author count by year
+plt.figure(figsize=(15, 8))
+sns.boxplot(data=data, x='year', y='author_count')
+plt.xticks(rotation=90)  # Rotate x labels for better readability if needed
+plt.title('Distribution of Author Count Over Years')
+plt.xlabel('Year')
+plt.ylabel('Author Count')
+plt.show()
