@@ -634,10 +634,8 @@ gbr_model.fit(X_train, y_train)
 y_pred = gbr_model.predict(X_test)
 mae = mean_absolute_error(y_test, y_pred)
 print(f"Gradient Boosting MAE: {mae}")
-
+MAE = 4.4
 '''
-
-# MAE: 4.42
 
 # None of the other regression methods get a better score than random forest.
 
