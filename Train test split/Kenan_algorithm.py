@@ -330,7 +330,6 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
 import xgboost as xgb
-from catboost import CatBoostRegressor
 # import lightgbm as lgb
 
 
