@@ -22,6 +22,8 @@ import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
+from collections import Counter
+
 
 # -------------------------------------------------Whole data-------------------------------------------------#
 
@@ -154,8 +156,6 @@ def author_column(data):
     len(all_authors)
     # Now all_authors contains all unique authors
 
-    from collections import Counter
-
     # Initialize a Counter object to hold author frequencies
     author_frequencies = Counter()
 
@@ -286,6 +286,8 @@ def preparing_data(data, title_tfidf_df, abstract_tfidf_df):
 
     # Splitting the dataset
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    return  X_train, X_test, y_train, y_test 
 
 
 # -------------------------------------------------Random Forest-------------------------------------------------#

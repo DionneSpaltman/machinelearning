@@ -1,10 +1,12 @@
 import time
 from sys import argv
+import pandas as pd
 from machinelearning.baseline import baseline
 from machinelearning.baseline_improved import baseline_improved
 from machinelearning.randomforest_chatgpt import randomforest_chatgpt
 from machinelearning.perceptron import perceptron
 from machinelearning.splitdata20_80 import splitdata20_80
+from preprocessing_copy import year_column, entrytype_column, editor_column, publisher_column, author_column, title_abstract, preparing_data
 
 def run_baseline():
     start_time = time.time()
@@ -59,5 +61,15 @@ if __name__ == '__main__':
     elif argv[1] == "splitdata":
         splitdata20_80()
     
+    elif argv[1] == "setup":
+        data = pd.read_json('input/train.json')
+        year_column(data)
+        entrytype_column(data)
+        editor_column(data)
+        publisher_column(data)
+        author_column(data)
+        title_tfidf_df, abstract_tfidf_df = title_abstract(data)
+        X_train, X_test, y_train, y_test = preparing_data(data, title_tfidf_df, abstract_tfidf_df)
+        
     else:
         print(f"Invalid algorithm: {argv[1]}. Please choose 'baseline' or 'improved_baseline'.")
