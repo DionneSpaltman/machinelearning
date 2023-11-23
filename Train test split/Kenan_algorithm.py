@@ -1,9 +1,28 @@
+"""
+Here are how each feature is treated in this file:
+1. Entrytype: One-hot encoded as 3 variables
+2. Editor: too many Missing Values, so it's dropped
+3. Publisher: One-hot encoded as 120 unique variables. the Missing Values are renamed: 'unknown_publisher'
+4. Author: One-hot encoded the authors with 50+ publications. Also, added another feature: Author_count, which is the number of author in each paper
+5. Title: Tf Idf Vectorizer, top 500 words
+6. Abstract: Tf Idf Vectorizer, top 500 words
+
+Then, from those cleaned data, this is what has been done:
+1. Random Forest Regressor, got MAE of 3.53
+2. Feature Importance Analysis
+3. Cross-Validation (5-fold)
+4. Hyperparameter Tuning
+"""
+
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
+
+# WHOLE DATA
 
 data = pd.read_json('train.json')
 print(data.head())
@@ -17,7 +36,7 @@ print(data.describe())
 
 # YEAR COLUMN
 
-#%%
+
 # Distribution of the 'year' field
 print(data['year'].value_counts())
 
@@ -25,13 +44,13 @@ print(data['year'].value_counts())
 sns.set()
 
 # Plotting the distribution of the 'year' column
-plt.figure(figsize=(10, 6))
-sns.histplot(data['year'], kde=False, color='blue', bins=30)
-plt.title('Distribution of Publication Years')
-plt.xlabel('Year')
-plt.ylabel('Frequency')
-plt.grid(True)
-plt.show()
+# plt.figure(figsize=(10, 6))
+# sns.histplot(data['year'], kde=False, color='blue', bins=30)
+# plt.title('Distribution of Publication Years')
+# plt.xlabel('Year')
+# plt.ylabel('Frequency')
+# plt.grid(True)
+# plt.show()
 
 
 # ENTRYTYPE COLUMN
@@ -55,7 +74,7 @@ print(data.info())
 entrytype_counts = data[['entrytype_article', 'entrytype_inproceedings', 'entrytype_proceedings']].sum()
 print(entrytype_counts)
 
-#%%
+
 # EDITOR COLUMN
 
 
@@ -100,25 +119,32 @@ filtered_data = data[data['publisher'].isin(top_publishers)]
 filtered_data
 
 # Create a box plot
-plt.figure(figsize=(15, 8))
-sns.boxplot(x='publisher', y='year', data=filtered_data)
-plt.xticks(rotation=45)
-plt.title('Distribution of Publication Years for Top Publishers')
-plt.show()
+# plt.figure(figsize=(15, 8))
+# sns.boxplot(x='publisher', y='year', data=filtered_data)
+# plt.xticks(rotation=45)
+# plt.title('Distribution of Publication Years for Top Publishers')
+# plt.show()
 
 
 # Bar Plot
-mean_years.plot(kind='bar', figsize=(15, 8))
-plt.title('Mean Publication Year for Each Publisher')
-plt.xlabel('Publisher')
-plt.ylabel('Mean Publication Year')
-plt.xticks(rotation=90)
-plt.ylim(1940, mean_years.max() + 1)  # Set y-axis limits
-plt.show()
+# mean_years.plot(kind='bar', figsize=(15, 8))
+# plt.title('Mean Publication Year for Each Publisher')
+# plt.xlabel('Publisher')
+# plt.ylabel('Mean Publication Year')
+# plt.xticks(rotation=90)
+# plt.ylim(1940, mean_years.max() + 1)  # Set y-axis limits
+# plt.show()
 
 # Since there are 8200 NA from 65000 items, the decision is not as easy
-# There are 3 options: impute the missing data, delete the 8200 instances, or mark all 8200 of them as 'unknown'
+# What is done below: impute the NA as 'unknown_publisher'
 
+data['publisher'].fillna('Unknown', inplace=True)
+
+# One-hot encoding of the 'publisher' column
+publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
+
+# Join the one-hot encoded columns back to the original DataFrame
+data = pd.concat([data, publisher_dummies], axis=1)
 
 # AUTHOR COLUMN
 
@@ -174,7 +200,6 @@ for author, distribution in year_distributions.items():
     print(f"Year distribution for {author}:")
     print(distribution, "\n")
 
-
     
 # Categorizing authors based on publication count
 frequency_categories = {'1-5 publications': 0, '6-20 publications': 0, '21-50 publications': 0, '50-100 publications': 0, '100+ publications': 0}
@@ -196,12 +221,12 @@ frequency_categories
 categories, counts = zip(*frequency_categories.items())
 
 # Create a bar plot
-plt.figure(figsize=(10, 6))
-plt.bar(categories, counts, color='skyblue')
-plt.xlabel('Number of Publications')
-plt.ylabel('Number of Authors')
-plt.title('Distribution of Authors by Number of Publications')
-plt.show()
+# plt.figure(figsize=(10, 6))
+# plt.bar(categories, counts, color='skyblue')
+# plt.xlabel('Number of Publications')
+# plt.ylabel('Number of Authors')
+# plt.title('Distribution of Authors by Number of Publications')
+# plt.show()
 
 # So, most authors have few publications. For example, 
 # 59000 authors have 1-5 publications only.
@@ -227,56 +252,13 @@ prolific_authors
 # Now our dataframe has 347 columns..
 data.shape
 
-# CHECKING MODEL SO FAR
 
-# I'll do a simple random forest regression check on the current data, without
-# including the title and abstract column for now
+# Importing further Text-processing techniques
+from sklearn.feature_extraction.text import HashingVectorizer
 
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error
-import pandas as pd
-import time
 
-# Sample data loading (replace this with your actual dataset)
-# data = pd.read_csv('your_dataset.csv')
-
-# Exclude title, abstract, and publisher column. Not 
-# X = data.drop(['year', 'title', 'abstract', 'publisher', 'author'], axis=1)
-# y = data['year']
-
-# Split the dataset into training and testing sets
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Initialize the Random Forest Regressor
-# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
-
-# Start the timer for training
-# train_start_time = time.time()
-
-# Train the model
-# model.fit(X_train, y_train)
-
-# Stop the timer for training and print the time taken
-# train_end_time = time.time()
-# print(f"Training Time: {train_end_time - train_start_time} seconds")
-
-# Start the timer for prediction
-# predict_start_time = time.time()
-
-# Predict on the testing set
-# y_pred = model.predict(X_test)
-
-# Stop the timer for prediction and print the time taken
-# predict_end_time = time.time()
-# print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
-
-# Calculate Mean Absolute Error
-# mae = mean_absolute_error(y_test, y_pred)
-# print(f"Mean Absolute Error: {mae}")
-
-# The MAE is 6.41 and the time taken is 2 minutes
-# Damn it's even worse than the baseline
+# TfidfVectorizer (n = 500)= 3.7
+# Hashing Vectorizer (n = 1000) = 3.40
 
 
 # TITLE and ABSTRACT COLUMNS
@@ -285,119 +267,69 @@ import time
 data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
-vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500 for simplicity
+vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
 title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
 # Convert to DataFrame
-title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
+title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=[f'title_{i}' for i in range(1000)])
 title_tfidf_df
-
-# Combining TF-IDF features with other features (excluding raw text columns)
-# X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed'], axis=1), title_tfidf_df], axis=1)
-# y = data['year']
-
-# Splitting the dataset
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Now you can proceed to train a model with X_train and y_train
-# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
-
-# Start the timer for training
-# train_start_time = time.time()
-
-# Train the model
-# model.fit(X_train, y_train)
- 
-# Stop the timer for training and print the time taken
-# train_end_time = time.time()
-# print(f"Training Time: {train_end_time - train_start_time} seconds")
-
-# Start the timer for prediction
-# predict_start_time = time.time()
-
-# Predict on the testing set
-# y_pred = model.predict(X_test)
-
-# Stop the timer for prediction and print the time taken
-# predict_end_time = time.time()
-# print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
-
-# Calculate Mean Absolute Error
-# mae = mean_absolute_error(y_test, y_pred)
-# print(f"Mean Absolute Error: {mae}")
-
-# With tfidf Vectorizer on the Title column, the MAE becomes 5.34 and the
-# Training time is 6 minutes
-# Let me try to do it to the abstract column too
 
 # Lowercase Abstract
 data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500
+abstract_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 # Convert 'abstract' TF-IDF to DataFrame
-abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(1000)])
 
-# Combining TF-IDF features with other features
-# X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
-#               title_tfidf_df, abstract_tfidf_df], axis=1).copy()
-# y = data['year']
+import pandas as pd
+from sklearn.feature_extraction.text import HashingVectorizer
+from transformers import DistilBertTokenizer, DistilBertModel
+import torch
 
-# Splitting the dataset
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Load pre-trained DistilBERT tokenizer and model
+# tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+# model = DistilBertModel.from_pretrained('distilbert-base-uncased')
 
-# Initialize the Random Forest Regressor
-# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+# Function to get BERT embeddings for a given text
+# def get_bert_embeddings(text):
+#    tokens = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
+#    with torch.no_grad():
+#        outputs = model(**tokens)
+#    embeddings = outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
+#    return embeddings
 
-# Start the training timer
-# train_start_time = time.time()
+# Process title and abstract
+#data['title_processed'] = data['title'].str.lower()
+#data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
-# Train the model
-# model.fit(X_train, y_train)
+# Get BERT embeddings for title and abstract
+# data['title_bert_embeddings'] = data['title_processed'].apply(get_bert_embeddings)
+# data['abstract_bert_embeddings'] = data['abstract_processed'].apply(get_bert_embeddings)
 
-# Stop the training timer and print the time taken
-# train_end_time = time.time()
-# print(f"Training Time: {train_end_time - train_start_time} seconds")
+# Convert BERT embeddings to DataFrame
+# title_bert_df = pd.DataFrame(data['title_bert_embeddings'].tolist(), columns=[f'title_bert_{i}' for i in range(768)])
+# abstract_bert_df = pd.DataFrame(data['abstract_bert_embeddings'].tolist(), columns=[f'abstract_bert_{i}' for i in range(768)])
 
-# Start the prediction timer
-# predict_start_time = time.time()
-
-# Predict on the testing set
-# y_pred = model.predict(X_test)
-
-# Stop the prediction timer and print the time taken
-# predict_end_time = time.time()
-# print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
-
-# Calculate Mean Absolute Error
-# mae = mean_absolute_error(y_test, y_pred)
-# print(f"Mean Absolute Error: {mae}")
-
-# With tfidf Vectorizer on the Title and Abstract Column, the MAE goes even further down, to 4.40
-
-# Now, back to publisher, the only column that isn't solved yet:
-
-# PUBLISHER COLUMN PART 2
-# Part 1: one-hot encode, and then keep the missing value as 'unknown'
-# Part 2: remove the missing value
-# compare MAE in part 1 and 2
-
-data['publisher'].fillna('Unknown', inplace=True)
-
-# One-hot encoding of the 'publisher' column
-publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
-
-# Join the one-hot encoded columns back to the original DataFrame
-data = pd.concat([data, publisher_dummies], axis=1)
+# Concatenate the DataFrames
+# result_df = pd.concat([title_bert_df, abstract_bert_df], axis=1)
 
 
-# NOW, LET'S DO RANDOM FOREST AGAIN WITH ALL THE COLUMNS TREATED
 
+# NOW, LET'S DO RANDOM FOREST WITH ALL THE FEATURES TREATED
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.linear_model import SGDClassifier
+import pandas as pd
+import time
 
 X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
-               title_tfidf_df, abstract_tfidf_df], axis=1).copy()
+               title_tfidf_df , abstract_tfidf_df], axis=1).copy()
 y = data['year']
 
 # Splitting the dataset
@@ -432,5 +364,3 @@ print(f"Mean Absolute Error: {mae}")
 
 # Time taken: 6 minutes
 # MAE: 3.53
-
-# %%
