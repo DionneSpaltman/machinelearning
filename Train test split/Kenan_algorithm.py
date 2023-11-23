@@ -115,6 +115,8 @@ mean_years
 # Box Plot
 # Filter out to include only the top N publishers for a clearer plot
 top_publishers = publisher_counts.index[:30]  # Top 30 publishers
+# 30 publishers = MAE: 4.548
+# 50 publishers = MAE: 4.548
 filtered_data = data[data['publisher'].isin(top_publishers)]
 filtered_data
 
@@ -241,7 +243,7 @@ categories, counts = zip(*frequency_categories.items())
 data['author_count'] = data['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 
 # Identify authors with 50+ publications
-prolific_authors = [author for author, count in author_frequencies.items() if count >= 50]
+prolific_authors = [author for author, count in author_frequencies.items() if count >= 30]
 
 # One-hot encode these authors
 for author in prolific_authors:
@@ -260,6 +262,26 @@ from sklearn.feature_extraction.text import HashingVectorizer
 # TfidfVectorizer (n = 500)= 3.7
 # Hashing Vectorizer (n = 1000) = 3.40
 # Bert : Quitted after 2 1/2 hours
+# data['title_processed'] = data['title'].str.lower()
+
+# Feature Extraction: TF-IDF
+# vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500 for simplicity
+# title_tfidf = vectorizer.fit_transform(data['title_processed'])
+
+# Convert to DataFrame
+# title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
+# title_tfidf_df
+
+# Lowercase Abstract
+# data['abstract_processed'] = data['abstract'].fillna('').str.lower()
+
+    # Feature Extraction: TF-IDF for 'abstract'
+# abstract_vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500
+# abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
+
+    # Convert 'abstract' TF-IDF to DataFrame
+# abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
+
 
 
 # TITLE and ABSTRACT COLUMNS
@@ -279,11 +301,12 @@ title_tfidf_df
 data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
+abstract_vectorizer = HashingVectorizer(n_features=2000)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
+
 # Convert 'abstract' TF-IDF to DataFrame
-abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(1000)])
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(2000)])
 
 import pandas as pd
 from sklearn.feature_extraction.text import HashingVectorizer
@@ -329,8 +352,9 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
+from sklearn.neural_network import MLPClassifier
 import xgboost as xgb
-import tensorflow as tf
+# import tensorflow as tf
 # from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Dense
 # import lightgbm as lgb
@@ -340,7 +364,7 @@ import pandas as pd
 import time
 
 X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
-               title_tfidf_df , abstract_tfidf_df], axis=1).copy()
+                title_tfidf_df, abstract_tfidf_df], axis=1).copy()
 y = data['year']
 
 # Splitting the dataset
@@ -354,10 +378,7 @@ model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
 # learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42 --> 3.47
 
 # model = AdaBoostRegressor(n_estimators=50, learning_rate=1.0, random_state=42) --> 5.08
-
 # model = xgb.XGBRegressor(n_estimators=250, learning_rate=0.1, max_depth=25, random_state=42)
-
-
 # model = lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42) --> did not import library
 # model = CatBoostRegressor(iterations=100, learning_rate=0.1, depth=6, random_state=42, logging_level='Silent') --> did not import library
 
