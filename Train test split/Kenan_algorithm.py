@@ -259,6 +259,7 @@ from sklearn.feature_extraction.text import HashingVectorizer
 
 # TfidfVectorizer (n = 500)= 3.7
 # Hashing Vectorizer (n = 1000) = 3.40
+# Bert : Quitted after 2 1/2 hours
 
 
 # TITLE and ABSTRACT COLUMNS
@@ -324,7 +325,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.linear_model import LogisticRegressionCV
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import SGDClassifier
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn.metrics import mean_absolute_error
+import xgboost as xgb
+from catboost import CatBoostRegressor
+# import lightgbm as lgb
+
+
 import pandas as pd
 import time
 
@@ -336,7 +345,12 @@ y = data['year']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+# model = RandomForestRegressor(n_estimators=100, max_depth = 7, n_jobs=-1, random_state=42)
+# model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) --> 4.20
+# model = AdaBoostRegressor(n_estimators=50, learning_rate=1.0, random_state=42) --> 5.08
+model = xgb.XGBRegressor(n_estimators=100, learning_rate=0.1, max_depth=7, random_state=42) 
+# model = lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42) --> did not import library
+# model = CatBoostRegressor(iterations=100, learning_rate=0.1, depth=6, random_state=42, logging_level='Silent') --> did not import library
 
 # Start the training timer
 train_start_time = time.time()
