@@ -1,3 +1,10 @@
+"""
+Goal of this file:
+
+Does not run for me (Dionne), I get a typerror for ufunc 'divide'
+"""
+
+
 import pandas as pd
 import numpy as np
 import json
@@ -7,7 +14,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 def feature_selection(): 
     # Load the dataset from the provided URL
-    data = pd.DataFrame.from_records(json.load(open('train.json'))).fillna("")
+    data = pd.DataFrame.from_records(json.load(open('input/train.json'))).fillna("")
 
     # Specify the target variable name (replace 'target_name' with the actual name)
     target_name = 'year'

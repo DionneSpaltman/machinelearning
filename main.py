@@ -4,7 +4,7 @@ from machinelearning.baseline import baseline
 from machinelearning.baseline_improved import baseline_improved
 from machinelearning.randomforest_chatgpt import randomforest_chatgpt
 from machinelearning.perceptron import perceptron
-
+from machinelearning.splitdata20_80 import splitdata20_80
 
 def run_baseline():
     start_time = time.time()
@@ -30,6 +30,12 @@ def run_perceptron():
     end_time = time.time()
     print(f"Perceptron algorithm took {end_time - start_time:.3f} seconds.")
 
+def run_splitdata():
+    start_time = time.time()
+    splitdata20_80()
+    end_time = time.time()
+    print(f"The split data 20/80 algorithm took {end_time - start_time:.3f} seconds.")
+
 if __name__ == '__main__':
     # Code to ask the user for the algorithm
     if len(argv) == 1:
@@ -50,6 +56,8 @@ if __name__ == '__main__':
         run_randomforest_chatgpt()
     elif argv[1] == "perceptron":
         run_perceptron()
+    elif argv[1] == "splitdata":
+        splitdata20_80()
     
     else:
         print(f"Invalid algorithm: {argv[1]}. Please choose 'baseline' or 'improved_baseline'.")

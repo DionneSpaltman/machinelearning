@@ -21,7 +21,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
 
-# WHOLE DATA
+# -------------------------------------------------Whole data-------------------------------------------------#
 
 data = pd.read_json('train.json')
 print(data.head())
@@ -33,8 +33,7 @@ print(data.info())
 print(data.describe())
 
 
-# YEAR COLUMN
-
+# ------------------------------------------------Year column-------------------------------------------------#
 
 # Distribution of the 'year' field
 print(data['year'].value_counts())
@@ -52,8 +51,7 @@ plt.grid(True)
 plt.show()
 
 
-# ENTRYTYPE COLUMN
-
+# -------------------------------------------------Entrytype column-------------------------------------------------#
 
 print(data['ENTRYTYPE'].unique())
 # Only 3 types, probably good to use One-Hot Encoding
@@ -74,8 +72,7 @@ entrytype_counts = data[['entrytype_article', 'entrytype_inproceedings', 'entryt
 print(entrytype_counts)
 
 
-# EDITOR COLUMN
-
+# -------------------------------------------------Editor column-------------------------------------------------#
 
 # Count null values in the 'editor' column
 null_count = data['editor'].isnull().sum()
@@ -86,8 +83,7 @@ data.drop('editor', axis=1, inplace=True)
 print(data.info())
 
 
-# PUBLISHER COLUMN
-
+# -------------------------------------------------Publisher column-------------------------------------------------#
 
 # Display unique values in the 'publisher' column
 unique_publishers = data['publisher'].unique()
@@ -145,7 +141,7 @@ publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
 # Join the one-hot encoded columns back to the original DataFrame
 data = pd.concat([data, publisher_dummies], axis=1)
 
-# AUTHOR COLUMN
+# -------------------------------------------------Author column-------------------------------------------------#
 
 # Flatten the list of authors
 all_authors = set()
@@ -252,7 +248,7 @@ prolific_authors
 data.shape
 
 
-# TITLE and ABSTRACT COLUMNS
+# -------------------------------------------------Title and Abstract-------------------------------------------------#
 
 # Make Lower case
 data['title_processed'] = data['title'].str.lower()
@@ -275,7 +271,7 @@ abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 # Convert 'abstract' TF-IDF to DataFrame
 abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
 
-
+# -------------------------------------------------Random Forest-------------------------------------------------#
 
 # NOW, LET'S DO RANDOM FOREST WITH ALL THE FEATURES TREATED
 
@@ -323,8 +319,7 @@ print(f"Mean Absolute Error: {mae}")
 # MAE: 3.53
 
 
-# FEATURE IMPORTANCE ANALYSIS
-
+# -------------------------------------------------Feature importance analysis-------------------------------------------------#
 
 # Extracting feature importances
 feature_importances = model.feature_importances_
@@ -360,8 +355,7 @@ plt.ylabel('Author Count')
 plt.show()
 
 
-# HYPERPARAMETER TUNING
-
+# -------------------------------------------------Hyperparameter tuning-------------------------------------------------#
 
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor
@@ -401,8 +395,7 @@ print(f"Mean Absolute Error with best model: {mae}")
 # The MAE was worse than before, now I'm confused lol
 
 
-# CROSS VALIDATION (5-fold)
-
+# -------------------------------------------------Cross-validation (5-fold)-------------------------------------------------#
 
 # Initialize the Random Forest Regressor
 model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
@@ -427,7 +420,7 @@ print(f"Standard Deviation of MAE from cross-validation: {std_dev_mae}")
 # the MAE can go as low as 3.39
 
 
-# TRYING OTHER REGRESSION METHODS
+# -------------------------------------------------Trying other regression methods-------------------------------------------------#
 
 # Linear Regression
 
