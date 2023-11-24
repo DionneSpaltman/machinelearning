@@ -287,26 +287,27 @@ from sklearn.feature_extraction.text import HashingVectorizer
 # TITLE and ABSTRACT COLUMNS
 
 # Make Lower case
-data['title_processed'] = data['title'].str.lower()
+# data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
-vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
-title_tfidf = vectorizer.fit_transform(data['title_processed'])
+# vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
+# title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
 # Convert to DataFrame
-title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=[f'title_{i}' for i in range(1000)])
-title_tfidf_df
+# title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=[f'title_{i}' for i in range(1000)])
+# title_tfidf_df
+
 
 # Lowercase Abstract
-data['abstract_processed'] = data['abstract'].fillna('').str.lower()
+# data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = HashingVectorizer(n_features=2000)  # Limit features to 1000
-abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
+# abstract_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
+# abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 
 # Convert 'abstract' TF-IDF to DataFrame
-abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(2000)])
+# abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(3000)])
 
 import pandas as pd
 from sklearn.feature_extraction.text import HashingVectorizer
@@ -314,31 +315,31 @@ from transformers import DistilBertTokenizer, DistilBertModel
 import torch
 
 # Load pre-trained DistilBERT tokenizer and model
-# tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-# model = DistilBertModel.from_pretrained('distilbert-base-uncased')
+tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+model = DistilBertModel.from_pretrained('distilbert-base-uncased')
 
 # Function to get BERT embeddings for a given text
-# def get_bert_embeddings(text):
-#    tokens = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
-#    with torch.no_grad():
-#        outputs = model(**tokens)
-#    embeddings = outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
-#    return embeddings
+def get_bert_embeddings(text):
+   tokens = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
+   with torch.no_grad():
+       outputs = model(**tokens)
+   embeddings = outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
+   return embeddings
 
 # Process title and abstract
-#data['title_processed'] = data['title'].str.lower()
-#data['abstract_processed'] = data['abstract'].fillna('').str.lower()
+data['title_processed'] = data['title'].str.lower()
+data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
 # Get BERT embeddings for title and abstract
-# data['title_bert_embeddings'] = data['title_processed'].apply(get_bert_embeddings)
-# data['abstract_bert_embeddings'] = data['abstract_processed'].apply(get_bert_embeddings)
+data['title_bert_embeddings'] = data['title_processed'].apply(get_bert_embeddings)
+data['abstract_bert_embeddings'] = data['abstract_processed'].apply(get_bert_embeddings)
 
 # Convert BERT embeddings to DataFrame
-# title_bert_df = pd.DataFrame(data['title_bert_embeddings'].tolist(), columns=[f'title_bert_{i}' for i in range(768)])
-# abstract_bert_df = pd.DataFrame(data['abstract_bert_embeddings'].tolist(), columns=[f'abstract_bert_{i}' for i in range(768)])
+title_bert_df = pd.DataFrame(data['title_bert_embeddings'].tolist(), columns=[f'title_bert_{i}' for i in range(768)])
+abstract_bert_df = pd.DataFrame(data['abstract_bert_embeddings'].tolist(), columns=[f'abstract_bert_{i}' for i in range(768)])
 
 # Concatenate the DataFrames
-# result_df = pd.concat([title_bert_df, abstract_bert_df], axis=1)
+result_df = pd.concat([title_bert_df, abstract_bert_df], axis=1)
 
 
 
@@ -364,14 +365,14 @@ import pandas as pd
 import time
 
 X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
-                title_tfidf_df, abstract_tfidf_df], axis=1).copy()
+                title_bert_df, abstract_bert_df], axis=1).copy()
 y = data['year']
 
 # Splitting the dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+model1 = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
 
 # model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) 
 # learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) --> 4.20
@@ -387,7 +388,7 @@ model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
 train_start_time = time.time()
 
 # Train the model
-model.fit(X_train, y_train)
+model1.fit(X_train, y_train)
 
 # Stop the training timer and print the time taken
 train_end_time = time.time()
@@ -397,7 +398,7 @@ print(f"Training Time: {train_end_time - train_start_time} seconds")
 predict_start_time = time.time()
 
 # Predict on the testing set
-y_pred = model.predict(X_test)
+y_pred = model1.predict(X_test)
 
 # Stop the prediction timer and print the time taken
 predict_end_time = time.time()
