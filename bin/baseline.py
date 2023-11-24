@@ -1,10 +1,15 @@
 """
+<<<<<<< HEAD:bin/baseline.py
 This is the baseline code without any changes
 It works
 
 Results
 INFO:root:Mean baseline MAE: 7.8054390754858805
 INFO:root:Ridge regress MAE: 5.812323459899639
+=======
+This is the baseline document as provided for the assignment
+It works
+>>>>>>> a7da5db (Machinelearning folder and functions):baseline.py
 """
 
 import pandas as pd
@@ -18,11 +23,11 @@ from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error
 
-def main():
+def baseline():
     logging.getLogger().setLevel(logging.INFO)
     logging.info("Loading training/test data")
-    train = pd.DataFrame.from_records(json.load(open('train.json'))).fillna("")
-    test = pd.DataFrame.from_records(json.load(open('test.json'))).fillna("")
+    train = pd.DataFrame.from_records(json.load(open('input/train.json'))).fillna("")
+    test = pd.DataFrame.from_records(json.load(open('input/test.json'))).fillna("")
     logging.info("Splitting validation")
     train, val = train_test_split(train, stratify=train['year'], random_state=123)
     featurizer = ColumnTransformer(
@@ -44,5 +49,5 @@ def main():
     logging.info("Writing prediction file")
     test.to_json("predicted.json", orient='records', indent=2)
     
-main()
+#baseline()
 
