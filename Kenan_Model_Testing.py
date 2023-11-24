@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 # WHOLE DATA
 
-data = pd.read_json('train.json')
+data = pd.read_json('input/train.json')
 print(data.head())
 
 # Basic info about data
