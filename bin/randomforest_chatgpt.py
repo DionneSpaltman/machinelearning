@@ -1,3 +1,7 @@
+"""
+This is random forest created by Chat GPT based on the baseline code we gave as input
+"""
+
 import pandas as pd
 import logging
 import json
@@ -10,12 +14,12 @@ from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor  # Added import for RandomForest
 from sklearn.metrics import mean_absolute_error
 
-def main():
+def randomforest_chatgpt():
     start_time = time.time()  # Start the timer
     logging.getLogger().setLevel(logging.INFO)
     logging.info("Loading training/test data")
-    train = pd.DataFrame.from_records(json.load(open('train.json'))).fillna("")
-    test = pd.DataFrame.from_records(json.load(open('test.json'))).fillna("")
+    train = pd.DataFrame.from_records(json.load(open('input/train.json'))).fillna("")
+    test = pd.DataFrame.from_records(json.load(open('input/test.json'))).fillna("")
     
     logging.info("Splitting validation")
     train, val = train_test_split(train, stratify=train['year'], random_state=123)
@@ -53,7 +57,8 @@ def main():
     end_time = time.time()  # End the timer
     total_time = end_time - start_time
     logging.info(f"Total execution time: {total_time:.2f} seconds")
-main()
+
+# randomforest_chatgpt()
 
 # This is step 2 using random forest regressor, 
 # Random Forest regressor MAE: 4.298209354954667
