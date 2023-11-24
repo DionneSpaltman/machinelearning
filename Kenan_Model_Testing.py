@@ -553,7 +553,7 @@ print(f"Mean Absolute Error: {mae}")
 
 # Time taken: 6 minutes
 # MAE: 3.53
-
+'''
 # CROSS VALIDATION (5-fold)
 
 # Initialize the Random Forest Regressor
@@ -577,7 +577,7 @@ print(f"Standard Deviation of MAE from cross-validation: {std_dev_mae}")
 # Average MAE from Cross-Validation = 3.44, STDev 0.05
 # Cross Validation Seems to Indicate no overfitting. If anything, in some split, 
 # the MAE can go as low as 3.39
-
+'''
 
 # TRYING OTHER REGRESSION METHODS
 
