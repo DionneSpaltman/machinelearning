@@ -2,7 +2,7 @@
 
 
 """changes:
-ABSTRACT: fill missing values with no_abstract """
+ABSTRACT: fill missing values with no_abstract and use countVectonizer"""
 
 
 from googletrans import Translator, constants
@@ -207,3 +207,5 @@ print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
 # Calculate Mean Absolute Error
 mae = mean_absolute_error(y_test, y_pred)
 print(f"Mean Absolute Error: {mae}")
+
+# base - 6.407989
