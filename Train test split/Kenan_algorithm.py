@@ -257,7 +257,7 @@ data.shape
 
 # Importing further Text-processing techniques
 from sklearn.feature_extraction.text import HashingVectorizer
-
+from sklearn.feature_extraction.text import CountVectorizer
 
 # TfidfVectorizer (n = 500)= 3.7
 # Hashing Vectorizer (n = 1000) = 3.40
@@ -290,11 +290,12 @@ from sklearn.feature_extraction.text import HashingVectorizer
 data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
-vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
+# vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
+vectorizer = CountVectorizer(analyzer='word', ngram_range=(1,1), lowercase=True)
 title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
 # Convert to DataFrame
-title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=[f'title_{i}' for i in range(1000)])
+title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 title_tfidf_df
 
 
@@ -307,7 +308,8 @@ abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 
 # Convert 'abstract' TF-IDF to DataFrame
-abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(3000)])
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(1000)])
+# abstract_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 
 import pandas as pd
 from sklearn.feature_extraction.text import HashingVectorizer
@@ -324,6 +326,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
@@ -341,16 +344,19 @@ X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 't
                 title_tfidf_df, abstract_tfidf_df], axis=1).copy()
 y = data['year']
 
+print(X)
+
 # Splitting the dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-model1 = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+model = SGDRegressor(max_iter=2000, tol=0.01, random_state=123, learning_rate= "adaptive", penalty="l1")
 
+# SGDRegressor(max_iter = 100, default) --> 4.5
 # model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) 
-# learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) --> 4.20
+# learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42 --> 4.20
 # learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42 --> 3.47
-
 # model = AdaBoostRegressor(n_estimators=50, learning_rate=1.0, random_state=42) --> 5.08
 # model = xgb.XGBRegressor(n_estimators=250, learning_rate=0.1, max_depth=25, random_state=42)
 # model = lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42) --> did not import library
@@ -361,7 +367,7 @@ model1 = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
 train_start_time = time.time()
 
 # Train the model
-model1.fit(X_train, y_train)
+model.fit(X_train, y_train)
 
 # Stop the training timer and print the time taken
 train_end_time = time.time()
@@ -371,7 +377,7 @@ print(f"Training Time: {train_end_time - train_start_time} seconds")
 predict_start_time = time.time()
 
 # Predict on the testing set
-y_pred = model1.predict(X_test)
+y_pred = model.predict(X_test)
 
 # Stop the prediction timer and print the time taken
 predict_end_time = time.time()
