@@ -21,6 +21,8 @@ import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 
 # WHOLE DATA
 
@@ -139,14 +141,42 @@ filtered_data
 
 # Since there are 8200 NA from 65000 items, the decision is not as easy
 # What is done below: impute the NA as 'unknown_publisher'
-
+# -----------------------------------------------------------------
 data['publisher'].fillna('Unknown', inplace=True)
 
-# One-hot encoding of the 'publisher' column
+# One-hot encoding of the 'publisher' column --> 4.5
 publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
 
 # Join the one-hot encoded columns back to the original DataFrame
 data = pd.concat([data, publisher_dummies], axis=1)
+# ---------------------------------------------------------------------
+# publisher_vectorizer = CountVectorizer(analyzer='word', ngram_range=(1,1), lowercase=True)
+# publisher_vec = publisher_vectorizer.fit_transform(data['publisher'])
+
+# Convert to DataFrame
+# publisher_vec_df = pd.DataFrame(publisher_vec.toarray(), columns=publisher_vectorizer.get_feature_names_out())
+# data = pd.concat([data, publisher_vec_df], axis=1)
+# ------------------------------------------------------------------
+# Hashing Vectorizer for publisher --> 4.7
+# data['publisher'].fillna('Unknown', inplace=True)
+
+# publisher_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
+# publisher_hash = publisher_vectorizer.fit_transform(data['publisher'])
+
+# Convert 'abstract' TF-IDF to DataFrame
+# publisher_hash_df = pd.DataFrame(publisher_hash.toarray(), columns=[f'publisher{i}' for i in range(1000)])
+# data = pd.concat([data, publisher_hash_df], axis=1)
+
+# ------------------------------------------------------------------
+# TFIDF vectorizer for publisher --> 4.7
+# publisher_vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500
+# publisher_tfidf = publisher_vectorizer.fit_transform(data['publisher'])
+
+# Convert 'abstract' TF-IDF to DataFrame
+# publisher_tfidf_df = pd.DataFrame(publisher_tfidf.toarray(), columns=publisher_vectorizer.get_feature_names_out())
+# data = pd.concat([data, publisher_tfidf_df], axis=1)
+# --------------------------------------------------------------------------------
+# CountVectorizer for publisher
 
 # AUTHOR COLUMN
 
@@ -257,7 +287,7 @@ data.shape
 
 # Importing further Text-processing techniques
 from sklearn.feature_extraction.text import HashingVectorizer
-
+from sklearn.feature_extraction.text import CountVectorizer
 
 # TfidfVectorizer (n = 500)= 3.7
 # Hashing Vectorizer (n = 1000) = 3.40
@@ -290,55 +320,31 @@ from sklearn.feature_extraction.text import HashingVectorizer
 data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
-vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
+# vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
+vectorizer = CountVectorizer(analyzer='word', ngram_range=(1,1), lowercase=True)
 title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
 # Convert to DataFrame
-title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=[f'title_{i}' for i in range(1000)])
+title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 title_tfidf_df
+
 
 # Lowercase Abstract
 data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = HashingVectorizer(n_features=2000)  # Limit features to 1000
+abstract_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 
 # Convert 'abstract' TF-IDF to DataFrame
-abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(2000)])
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(1000)])
+# abstract_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 
 import pandas as pd
 from sklearn.feature_extraction.text import HashingVectorizer
 from transformers import DistilBertTokenizer, DistilBertModel
 import torch
-
-# Load pre-trained DistilBERT tokenizer and model
-# tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-# model = DistilBertModel.from_pretrained('distilbert-base-uncased')
-
-# Function to get BERT embeddings for a given text
-# def get_bert_embeddings(text):
-#    tokens = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
-#    with torch.no_grad():
-#        outputs = model(**tokens)
-#    embeddings = outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
-#    return embeddings
-
-# Process title and abstract
-#data['title_processed'] = data['title'].str.lower()
-#data['abstract_processed'] = data['abstract'].fillna('').str.lower()
-
-# Get BERT embeddings for title and abstract
-# data['title_bert_embeddings'] = data['title_processed'].apply(get_bert_embeddings)
-# data['abstract_bert_embeddings'] = data['abstract_processed'].apply(get_bert_embeddings)
-
-# Convert BERT embeddings to DataFrame
-# title_bert_df = pd.DataFrame(data['title_bert_embeddings'].tolist(), columns=[f'title_bert_{i}' for i in range(768)])
-# abstract_bert_df = pd.DataFrame(data['abstract_bert_embeddings'].tolist(), columns=[f'abstract_bert_{i}' for i in range(768)])
-
-# Concatenate the DataFrames
-# result_df = pd.concat([title_bert_df, abstract_bert_df], axis=1)
 
 
 
@@ -350,9 +356,11 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import MinMaxScaler
 import xgboost as xgb
 
 # import tensorflow as tf
@@ -368,21 +376,89 @@ X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 't
                 title_tfidf_df, abstract_tfidf_df], axis=1).copy()
 y = data['year']
 
+print(X)
+
 # Splitting the dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+# Define the desired range for the target variable
+target_min, target_max = 1952, 2023
+target_mean = 2012
+
+# Scale the target variable to the desired range
+y_train = (y_train - target_mean) / (target_max - target_min)
+y_test = (y_test - target_mean) / (target_max - target_min)
+
+min_max_scaler = MinMaxScaler()
+X_train= min_max_scaler.fit_transform(X_train)
+X_test = min_max_scaler.transform(X_test)
+
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+model = RandomForestRegressor(n_estimators=100, max_depth = 3, n_jobs=-1, random_state=42)
 
+
+# ------------------------------------------------------------------------------------------------------------------------------------------
+# Experimenting different models and hyperparameters
+
+# RandomForestRegressor(n_estimators=100, max_depth = 3, n_jobs=-1, random_state=42) --> 4.54
+# SGDRegressor(max_iter=2000, tol=0.01, random_state=123, learning_rate= "adaptive", penalty="l1") --> 4.01
+# SGDRegressor(max_iter = 100, default) --> 4.5
 # model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) 
-# learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) --> 4.20
+# learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42 --> 4.20
 # learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42 --> 3.47
-
 # model = AdaBoostRegressor(n_estimators=50, learning_rate=1.0, random_state=42) --> 5.08
 # model = xgb.XGBRegressor(n_estimators=250, learning_rate=0.1, max_depth=25, random_state=42)
 # model = lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42) --> did not import library
 # model = CatBoostRegressor(iterations=100, learning_rate=0.1, depth=6, random_state=42, logging_level='Silent') --> did not import library
 
+
+# -------------------------------------------------------------------------------------------------------------------------------------------
+# from keras.models import Sequential
+# from keras.layers import Dense, Dropout
+# from keras.callbacks import EarlyStopping
+# from sklearn.preprocessing import MinMaxScaler
+
+# Define the desired range for the target variable
+# target_min, target_max = 1952, 2023
+# target_mean = 2012
+
+# Scale the target variable to the desired range
+# y_train = (y_train - target_mean) / (target_max - target_min)
+# y_test = (y_test - target_mean) / (target_max - target_min)
+
+# min_max_scaler = MinMaxScaler()
+# X_train= min_max_scaler.fit_transform(X_train)
+# X_test = min_max_scaler.transform(X_test)
+
+# model = Sequential()
+# model.add(Dense(100, input_shape=(X_train.shape[1],), activation='relu')) # (features,)
+# model.add(Dropout(0.5)) 
+# model.add(Dense(50, activation='relu'))
+# model.add(Dropout(0.3)) 
+# model.add(Dense(25, activation='relu'))
+# model.add(Dense(1, activation='linear')) # output node
+# model.summary() # see what your model looks like
+
+# compile the model
+# model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
+
+# early stopping callback
+# es = EarlyStopping(monitor='val_loss',
+#                    mode='min',
+#                    patience=10,
+#                    restore_best_weights = True)
+
+# fit the model!
+# attach it to a new variable called 'history' in case
+# to look at the learning curves
+# model.fit(X_train, y_train,
+#                     validation_data = (X_test, y_test),
+#                     callbacks=[es],
+#                     epochs=50,
+#                     batch_size=32,
+ #                    verbose=1)
+
+#--------------------------------------------------------------------------------------------------------
 
 # Start the training timer
 train_start_time = time.time()
@@ -410,24 +486,3 @@ print(f"Mean Absolute Error: {mae}")
 
 # Time taken: 6 minutes
 # MAE: 3.53
-
-# FEATURE IMPORTANCE ANALYSIS
-
-
-# Extracting feature importances
-feature_importances = model.feature_importances_
-
-# Matching feature names with their importances
-feature_names = X_train.columns
-importances = pd.Series(feature_importances, index=feature_names)
-
-# Sorting the features by their importance
-sorted_importances = importances.sort_values(ascending=False)
-
-# Visualizing the top 20 most important features
-plt.figure(figsize=(15, 3))
-sorted_importances[:20].plot(kind='bar')
-plt.title('Top 20 Feature Importances in Random Forest Model')
-plt.xlabel('Features')
-plt.ylabel('Importance')
-plt.show()

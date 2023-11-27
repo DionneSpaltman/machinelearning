@@ -14,12 +14,12 @@ from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor  # Added import for RandomForest
 from sklearn.metrics import mean_absolute_error
 
-def main():
+def splitdata20_80():
     start_time = time.time()  # Start the timer
     logging.getLogger().setLevel(logging.INFO)
     logging.info("Loading training/test data")
-    train = pd.DataFrame.from_records(json.load(open('train.json'))).fillna("")
-    test = pd.DataFrame.from_records(json.load(open('test.json'))).fillna("")
+    train = pd.DataFrame.from_records(json.load(open('input/train.json'))).fillna("")
+    test = pd.DataFrame.from_records(json.load(open('input/test.json'))).fillna("")
     
     logging.info("Splitting validation")
     train, val = train_test_split(train, stratify=train['year'], random_state=123,train_size=0.2)
@@ -57,7 +57,8 @@ def main():
     end_time = time.time()  # End the timer
     total_time = end_time - start_time
     logging.info(f"Total execution time: {total_time:.2f} seconds")
-main()
+
+splitdata20_80()
 
 # Just want to see if I make the training data using only 20% instead of 80%
 # Will it be much faster? Will it lose a lot of performance?
