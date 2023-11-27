@@ -13,10 +13,16 @@ from collections import Counter
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import time
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
+from sklearn.metrics import mean_absolute_error
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import PCA
 
 # WHOLE DATA
 
-data = pd.read_json('train.json')
+data = pd.read_json('input/train.json')
 print(data.head())
 
 # Basic info about data
@@ -301,9 +307,6 @@ data['author_proceedings_interaction'] = data['author_count'] * data['entrytype_
 
 # TRYING ADVANCE TEXT ANALYSIS ON THE ABSTRACT
 
-from sklearn.decomposition import LatentDirichletAllocation
-from sklearn.feature_extraction.text import CountVectorizer
-
 # Prepare a CountVectorizer, LDA expects integer counts
 count_vect = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
 doc_term_matrix = count_vect.fit_transform(data['abstract_processed'])
@@ -332,7 +335,7 @@ for i in range(n_topics):
 
 # PCA
 
-from sklearn.decomposition import PCA
+
 # Apply PCA to the title TF-IDF features
 pca_title = PCA(n_components=0.95)
 title_tfidf_reduced = pca_title.fit_transform(title_tfidf_df)
@@ -460,9 +463,6 @@ print(f"New MAE with selected features: {new_mae}")
 # BLENDING
 
 '''
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.svm import SVR
-from sklearn.metrics import mean_absolute_error
 
 # Train individual models (Random Forest can utilize multiple cores)
 model1 = RandomForestRegressor(n_estimators=100, n_jobs=-1).fit(X_train, y_train)
@@ -507,165 +507,4 @@ stack_model.fit(X_train, y_train)
 stack_pred = stack_model.predict(X_test)
 stack_mae = mean_absolute_error(y_test, stack_pred)
 print(f"MAE with Stacking Model: {stack_mae}")
-
-# NEURAL NETWORKS
-
-# Import TensorFlow and Keras
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-
-# Convert X_train and X_test to float
-X_train = X_train.astype(float)
-X_test = X_test.astype(float)
-
-# Define and compile the neural network model
-nn_model = Sequential([
-    Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
-    Dropout(0.1),
-    Dense(64, activation='relu'),
-    Dense(1)  # Output layer
-])
-nn_model.compile(optimizer='adam', loss='mean_squared_error')
-
-# Train the model
-nn_model.fit(X_train, y_train, epochs=10, batch_size=32, validation_split=0.2)
-
-# Predict and evaluate
-nn_pred = nn_model.predict(X_test).flatten()
-nn_mae = mean_absolute_error(y_test, nn_pred)
-print(f"MAE with Neural Network: {nn_mae}")
-
-# MAE 12.9 .....
-
-nn_model = Sequential([
-    Dense(256, activation='relu', input_shape=(X_train.shape[1],)),
-    Dropout(0.2),
-    Dense(128, activation='relu'),
-    Dropout(0.1),
-    Dense(64, activation='relu'),
-    Dense(1)  # Output layer
-])
-
-nn_model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-                 loss='mean_squared_error')
-
-nn_model.fit(X_train, y_train, epochs=20, batch_size=64, validation_split=0.2)
-
-nn_pred = nn_model.predict(X_test).flatten()
-nn_mae = mean_absolute_error(y_test, nn_pred)
-print(f"MAE with Neural Network: {nn_mae}")
-
-# Now the MAE is 19..
 '''
-
-
-# I asked chat GPT to optimize the dataset for neural network and run it again
-# while I sleep. Here goes..
-
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import GridSearchCV
-from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
-from tensorflow.keras.optimizers import Adam
-
-# Feature selection using PCA
-pca = PCA(n_components=0.95)  # Adjust n_components as needed
-X_pca = pca.fit_transform(X)
-
-# Data normalization
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X_pca)
-
-# Neural network architecture
-def create_model(learning_rate=0.01):
-    model = Sequential([
-        Dense(128, activation='relu', input_shape=(X_scaled.shape[1],)),
-        Dropout(0.1),
-        Dense(64, activation='relu'),
-        Dense(1)
-    ])
-    optimizer = Adam(learning_rate=learning_rate)
-    model.compile(optimizer=optimizer, loss='mean_squared_error')
-    return model
-
-# Wrapping Keras model with KerasRegressor for compatibility with scikit-learn
-nn_model = KerasRegressor(build_fn=create_model, epochs=10, batch_size=32, verbose=0)
-
-# Hyperparameters to tune
-param_grid = {
-    'learning_rate': [0.001, 0.01, 0.1],
-    'batch_size': [32, 64, 128]
-}
-
-# Grid search
-grid = GridSearchCV(estimator=nn_model, param_grid=param_grid, cv=3)
-grid_result = grid.fit(X_scaled, y)
-
-# Best parameters
-print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
-
-# Train the best model
-best_model = grid_result.best_estimator_
-history = best_model.fit(X_scaled, y, validation_split=0.2)
-
-# Predict and evaluate
-y_pred = best_model.predict(scaler.transform(pca.transform(X_test)))
-nn_mae = mean_absolute_error(y_test, y_pred)
-print(f"MAE with Optimized Neural Network: {nn_mae}")
-
-# MAE 3.39! It has reached parity with Random Forest
-
-# Next Try
-from scikeras.wrappers import KerasRegressor
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
-from tensorflow.keras.optimizers import Adam
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_absolute_error
-from tensorflow.keras.callbacks import EarlyStopping
-
-# Define the model creation function
-def create_optimized_model(learning_rate=0.01):
-    model = Sequential([
-        Dense(256, activation='relu', input_shape=(X_scaled.shape[1],)),
-        BatchNormalization(),
-        Dropout(0.2),
-        Dense(128, activation='relu'),
-        BatchNormalization(),
-        Dropout(0.2),
-        Dense(64, activation='relu'),
-        Dense(1)
-    ])
-    optimizer = Adam(learning_rate=learning_rate)
-    model.compile(optimizer=optimizer, loss='mean_squared_error')
-    return model
-
-# Initialize KerasRegressor with the model creation function
-nn_optimized_model = KerasRegressor(model=create_optimized_model, epochs=100, batch_size=32, verbose=0)
-
-# Define the parameter grid for grid search
-param_grid_optimized = {
-    'model__learning_rate': [0.001, 0.005, 0.01],
-    'model__batch_size': [32, 64]
-}
-
-# Perform grid search
-grid_optimized = GridSearchCV(estimator=nn_optimized_model, param_grid=param_grid_optimized, cv=3, n_jobs=-1)
-grid_result_optimized = grid_optimized.fit(X_scaled, y)
-
-# Output best parameters and score
-print("Best: %f using %s" % (grid_result_optimized.best_score_, grid_result_optimized.best_params_))
-
-# Get the best model from grid search
-best_optimized_model = grid_result_optimized.best_estimator_.model
-
-# Train the best model
-history_optimized = best_optimized_model.fit(X_scaled, y, epochs=100, batch_size=32, validation_split=0.2, callbacks=[EarlyStopping(monitor='val_loss', patience=10)])
-
-# Predict with the optimized model
-y_pred_optimized = best_optimized_model.predict(scaler.transform(pca.transform(X_test))).flatten()
-nn_mae_optimized = mean_absolute_error(y_test, y_pred_optimized)
-
-# Output MAE
-print(f"MAE with Further Optimized Neural Network: {nn_mae_optimized}")
