@@ -21,6 +21,8 @@ import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 
 # WHOLE DATA
 
@@ -139,14 +141,35 @@ filtered_data
 
 # Since there are 8200 NA from 65000 items, the decision is not as easy
 # What is done below: impute the NA as 'unknown_publisher'
-
+# -----------------------------------------------------------------
 data['publisher'].fillna('Unknown', inplace=True)
 
-# One-hot encoding of the 'publisher' column
+# One-hot encoding of the 'publisher' column --> 4.5
 publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
 
 # Join the one-hot encoded columns back to the original DataFrame
 data = pd.concat([data, publisher_dummies], axis=1)
+# ------------------------------------------------------------------
+# Hashing Vectorizer for publisher --> 4.7
+# data['publisher'].fillna('Unknown', inplace=True)
+
+# publisher_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
+# publisher_hash = publisher_vectorizer.fit_transform(data['publisher'])
+
+# Convert 'abstract' TF-IDF to DataFrame
+# publisher_hash_df = pd.DataFrame(publisher_hash.toarray(), columns=[f'publisher{i}' for i in range(1000)])
+# data = pd.concat([data, publisher_hash_df], axis=1)
+
+# ------------------------------------------------------------------
+# TFIDF vectorizer for publisher --> 4.7
+# publisher_vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500
+# publisher_tfidf = publisher_vectorizer.fit_transform(data['publisher'])
+
+# Convert 'abstract' TF-IDF to DataFrame
+# publisher_tfidf_df = pd.DataFrame(publisher_tfidf.toarray(), columns=publisher_vectorizer.get_feature_names_out())
+# data = pd.concat([data, publisher_tfidf_df], axis=1)
+
+
 
 # AUTHOR COLUMN
 
@@ -350,9 +373,14 @@ print(X)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-# model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
-model = SGDRegressor(max_iter=2000, tol=0.01, random_state=123, learning_rate= "adaptive", penalty="l1")
+# model = RandomForestRegressor(n_estimators=100, max_depth = 3, n_jobs=-1, random_state=42)
 
+
+# ------------------------------------------------------------------------------------------------------------------------------------------
+# Experimenting different models and hyperparameters
+
+# RandomForestRegressor(n_estimators=100, max_depth = 3, n_jobs=-1, random_state=42) --> 4.54
+# SGDRegressor(max_iter=2000, tol=0.01, random_state=123, learning_rate= "adaptive", penalty="l1") --> 4.01
 # SGDRegressor(max_iter = 100, default) --> 4.5
 # model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) 
 # learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42 --> 4.20
@@ -363,11 +391,49 @@ model = SGDRegressor(max_iter=2000, tol=0.01, random_state=123, learning_rate= "
 # model = CatBoostRegressor(iterations=100, learning_rate=0.1, depth=6, random_state=42, logging_level='Silent') --> did not import library
 
 
+# -------------------------------------------------------------------------------------------------------------------------------------------
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from keras.callbacks import EarlyStopping
+from sklearn.preprocessing import MinMaxScaler
+
+min_max_scaler = MinMaxScaler()
+X_train = min_max_scaler.fit_transform(X_train)
+X_test = min_max_scaler.transform(X_test)
+
+model = Sequential()
+model.add(Dense(1000, input_shape=(X_train.shape[1],), activation='relu')) # (features,)
+model.add(Dense(500, activation='relu'))
+model.add(Dense(250, activation='relu'))
+model.add(Dense(1, activation='linear')) # output node
+model.summary() # see what your model looks like
+
+# compile the model
+model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
+
+# early stopping callback
+es = EarlyStopping(monitor='val_loss',
+                   mode='min',
+                   patience=10,
+                   restore_best_weights = True)
+
+# fit the model!
+# attach it to a new variable called 'history' in case
+# to look at the learning curves
+model.fit(X_train, y_train,
+                    validation_data = (X_test, y_test),
+                    callbacks=[es],
+                    epochs=50,
+                    batch_size=50,
+                    verbose=1)
+
+#--------------------------------------------------------------------------------------------------------
+
 # Start the training timer
 train_start_time = time.time()
 
 # Train the model
-model.fit(X_train, y_train)
+# model.fit(X_train, y_train)
 
 # Stop the training timer and print the time taken
 train_end_time = time.time()
@@ -386,6 +452,3 @@ print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
 # Calculate Mean Absolute Error
 mae = mean_absolute_error(y_test, y_pred)
 print(f"Mean Absolute Error: {mae}")
-
-# Time taken: 6 minutes
-# MAE: 3.53

@@ -21,6 +21,7 @@ import seaborn as sns
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_extraction.text import HashingVectorizer
 
 # WHOLE DATA
 
@@ -140,11 +141,18 @@ filtered_data
 # Since there are 8200 NA from 65000 items, the decision is not as easy
 # What is done below: impute the NA as 'unknown_publisher'
 
-data['publisher'].fillna('Unknown', inplace=True)
+publisher_processed = data['publisher'].fillna('Unknown', inplace=True)
 
 # One-hot encoding of the 'publisher' column
-publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
+# publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
 
 # Join the one-hot encoded columns back to the original DataFrame
-data = pd.concat([data, publisher_dummies], axis=1)
-print(data)
+# data = pd.concat([data, publisher_dummies], axis=1)
+# print(data)
+
+publisher_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
+publisher_hash = publisher_vectorizer.fit_transform(data['publisher_processed '])
+
+
+# Convert 'abstract' TF-IDF to DataFrame
+publisher_hash _df = pd.DataFrame(publisher_hash.toarray(), columns=[f'publisher{i}' for i in range(1000)])
