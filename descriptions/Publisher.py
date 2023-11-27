@@ -141,8 +141,7 @@ filtered_data
 # Since there are 8200 NA from 65000 items, the decision is not as easy
 # What is done below: impute the NA as 'unknown_publisher'
 
-publisher_processed = data['publisher'].fillna('Unknown', inplace=True)
-
+# --------------------------------------------------------------------------------------------
 # One-hot encoding of the 'publisher' column
 # publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
 
@@ -150,9 +149,49 @@ publisher_processed = data['publisher'].fillna('Unknown', inplace=True)
 # data = pd.concat([data, publisher_dummies], axis=1)
 # print(data)
 
-publisher_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
-publisher_hash = publisher_vectorizer.fit_transform(data['publisher_processed '])
+# -----------------------------------------------------------------------------------------------
+data['publisher'].fillna('Unknown', inplace=True)
 
+publisher_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
+publisher_hash = publisher_vectorizer.fit_transform(data['publisher'])
 
 # Convert 'abstract' TF-IDF to DataFrame
-publisher_hash _df = pd.DataFrame(publisher_hash.toarray(), columns=[f'publisher{i}' for i in range(1000)])
+publisher_hash_df = pd.DataFrame(publisher_hash.toarray(), columns=[f'publisher{i}' for i in range(1000)])
+data = pd.concat([data, publisher_hash_df], axis=1)
+
+#---------------------------------------------------------------------------------------------------
+# TFIDF vectorizer
+abstract_vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500
+abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
+
+# Convert 'abstract' TF-IDF to DataFrame
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
+data = pd.concat([data, abstract_tfidf_df], axis=1)
+
+
+#-------------------------------------------------------------------------------------------------------
+model = Sequential()
+model.add(Dense(1000, input_shape=(X_train.shape[1],), activation='relu')) # (features,)
+model.add(Dense(500, activation='relu'))
+model.add(Dense(250, activation='relu'))
+model.add(Dense(1, activation='linear')) # output node
+model.summary() # see what your model looks like
+
+# compile the model
+model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
+
+# early stopping callback
+es = EarlyStopping(monitor='val_loss',
+                   mode='min',
+                   patience=50,
+                   restore_best_weights = True)
+
+# fit the model!
+# attach it to a new variable called 'history' in case
+# to look at the learning curves
+history = model.fit(X_train, y_train,
+                    validation_data = (X_test, y_test),
+                    callbacks=[es],
+                    epochs=5000,
+                    batch_size=50,
+                    verbose=1)
