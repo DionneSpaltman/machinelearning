@@ -354,6 +354,7 @@ from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
 import xgboost as xgb
+
 # import tensorflow as tf
 # from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Dense
@@ -409,3 +410,24 @@ print(f"Mean Absolute Error: {mae}")
 
 # Time taken: 6 minutes
 # MAE: 3.53
+
+# FEATURE IMPORTANCE ANALYSIS
+
+
+# Extracting feature importances
+feature_importances = model.feature_importances_
+
+# Matching feature names with their importances
+feature_names = X_train.columns
+importances = pd.Series(feature_importances, index=feature_names)
+
+# Sorting the features by their importance
+sorted_importances = importances.sort_values(ascending=False)
+
+# Visualizing the top 20 most important features
+plt.figure(figsize=(15, 3))
+sorted_importances[:20].plot(kind='bar')
+plt.title('Top 20 Feature Importances in Random Forest Model')
+plt.xlabel('Features')
+plt.ylabel('Importance')
+plt.show()
