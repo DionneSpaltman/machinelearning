@@ -2,7 +2,10 @@
 
 
 """changes:
-ABSTRACT: fill missing values with no_abstract and use countVectonizer"""
+ABSTRACT: fill missing values with no_abstract + use countVectonizer + also variable len of abstarct
+EDITOR: adding editor column with just number of editors
+
+--> error in total decreased from 3.53 to 3.4189"""
 
 
 from googletrans import Translator, constants
@@ -20,7 +23,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 # WHOLE DATA
 
-data = pd.read_json('train.json')
+data = pd.read_json('input/train.json')
 data.columns
 
 
@@ -36,18 +39,21 @@ data = pd.concat([data, entrytype_dummies], axis=1)
 # EDITOR COLUMN
 
 # data.drop('editor', axis=1, inplace=True)
+""" adding an editor column that just shows number of editors decreases error by 0.09"""
+data['editor_count'] = data['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
+
 
 
 # PUBLISHER COLUMN
 
 # What is done below: impute the NA as 'unknown_publisher'
-#data['publisher'].fillna('Unknown', inplace=True)
+data['publisher'].fillna('Unknown', inplace=True)
 
 # One-hot encoding of the 'publisher' column
-#publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
+publisher_dummies = pd.get_dummies(data['publisher'], prefix='publisher')
 
 # Join the one-hot encoded columns back to the original DataFrame
-#data = pd.concat([data, publisher_dummies], axis=1)
+data = pd.concat([data, publisher_dummies], axis=1)
 
 
 # AUTHOR COLUMN
@@ -131,36 +137,30 @@ for author in prolific_authors:
 # TITLE and ABSTRACT COLUMNS
 
 # Make Lower case
-#data['title_processed'] = data['title'].str.lower()
+data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
-#vectorizer = HashingVectorizer(stop_words='english', max_features=500)  # Limit features to 500 for simplicity
-#title_tfidf = vectorizer.fit_transform(data['title_processed'])
+vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500 for simplicity
+title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
 # Convert to DataFrame
-#title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
-
-
-
-
-
-
+title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 
 # Lowercase Abstract 
-""" filling na with no_abstarct decreases error by around 0.04 and use CountVectonizer"""
+""" filling na with no_abstarct decreases error by around 0.04 and use CountVectonizer
+and using also lenght of abstarct as feature (together with countervectonizer) decreases error by 0.03"""
 
 
-#data['abstract_processed'] = data['abstract'].fillna('no_abstract').str.lower()
+data['abstract_processed'] = data['abstract'].fillna('no_abstract').str.lower()
+
+data['abstract_length'] = data['abstract_processed'].apply(len)
 
 # Feature Extraction: TF-IDF for 'abstract'
-#abstract_vectorizer = CountVectorizer(stop_words='english', max_features=500)  # Limit features to 500
-#abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_translated'])
+abstract_vectorizer = CountVectorizer(stop_words='english', max_features=500)  # Limit features to 500
+abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 # Convert 'abstract' TF-IDF to DataFrame
-#abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
-
-
-#abstract_tfidf_df.columns = abstract_tfidf_df.columns.astype(str)
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
 
 
 # NOW, LET'S DO RANDOM FOREST WITH ALL THE FEATURES TREATED
@@ -172,9 +172,11 @@ import pandas as pd
 import time
 
 #X = pd.concat(data.drop(['ENTRYTYPE', 'year', "title", "editor", "year", "publisher", "author", "abstract", 'abstract_processed']), axis=1).copy()
-X = pd.concat([data.drop(['ENTRYTYPE', 'year', "title", "editor", "year", "publisher", "author", "abstract"], axis=1)], axis=1).copy()
-#X = pd.concat([data.drop(['year','ENTRYTYPE', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
+#X = pd.concat([data.drop(['ENTRYTYPE', 'year', "title", "editor", "year", "publisher", "author", "abstract"], axis=1)], axis=1).copy()
+#X = pd.concat([data.drop(['ENTRYTYPE','year', 'title', "editor", 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
  #              title_tfidf_df, abstract_tfidf_df], axis=1).copy()
+X = pd.concat([data.drop(['ENTRYTYPE','year', 'title', "editor", 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
+               title_tfidf_df], axis=1).copy()
 
 y = data['year']
 
@@ -208,4 +210,42 @@ print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
 mae = mean_absolute_error(y_test, y_pred)
 print(f"Mean Absolute Error: {mae}")
 
-# base - 6.407989
+
+
+
+""" experimented with neural networks, but got error: 14.81 (also needed to instal keras and tenserflow with pip)"""
+#from sklearn.model_selection import train_test_split
+#from sklearn.preprocessing import StandardScaler
+#from sklearn.metrics import mean_absolute_error
+#from keras.models import Sequential
+#from keras.layers import Dense
+
+# Assuming X and y are already defined
+
+# Splitting the dataset
+#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize the features
+#scaler = StandardScaler()
+#X_train_scaled = scaler.fit_transform(X_train)
+#X_test_scaled = scaler.transform(X_test)
+
+# Build the neural network model
+#model = Sequential()
+#model.add(Dense(64, input_dim=X_train_scaled.shape[1], activation='relu'))
+#model.add(Dense(32, activation='relu'))
+#model.add(Dense(1, activation='linear'))
+
+# Compile the model
+#model.compile(loss='mean_absolute_error', optimizer='adam')
+
+# Train the model
+#model.fit(X_train_scaled, y_train, epochs=50, batch_size=32, validation_data=(X_test_scaled, y_test))
+
+# Predict on the testing set
+#y_pred_nn = model.predict(X_test_scaled)
+
+# Calculate Mean Absolute Error
+#mae_nn = mean_absolute_error(y_test, y_pred_nn)
+#print(f"Neural Network Mean Absolute Error: {mae_nn}")
+
