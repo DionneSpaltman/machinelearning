@@ -508,3 +508,321 @@ stack_pred = stack_model.predict(X_test)
 stack_mae = mean_absolute_error(y_test, stack_pred)
 print(f"MAE with Stacking Model: {stack_mae}")
 '''
+
+
+# RFE
+# Recursive Feature Elimination (RFE) is a feature selection method that fits 
+# a model and removes the weakest feature (or features) until the specified 
+# number of features is reached. It's a way of selecting important features 
+# by recursively considering smaller and smaller sets of features.
+
+'''
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_selection import RFE
+from sklearn.metrics import mean_absolute_error
+
+# Splitting the dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+# Initialize the Random Forest Regressor
+rf_model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=0)
+
+# Initialize RFE with the random forest model
+selector = RFE(rf_model, n_features_to_select=500, step=50)  # n_features_to_select should be set based on domain knowledge or experimentation
+selector = selector.fit(X_train, y_train)
+
+# Transform training and test sets
+X_train_rfe = selector.transform(X_train)
+X_test_rfe = selector.transform(X_test)
+
+# Fit the model on the reduced dataset
+rf_model.fit(X_train_rfe, y_train)
+
+# Predict and evaluate
+y_pred = rf_model.predict(X_test_rfe)
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Mean Absolute Error with RFE: {mae}")
+
+# Took 2 hours, MAE 3.48
+'''
+
+# Now the opposite way: 
+# adding features one by one, up to 20 features, and keep track of the best MAE
+
+'''
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
+
+# Splitting the dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Fit a model on all features to get the feature importances
+model_all_features = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+model_all_features.fit(X_train, y_train)
+feature_importances = model_all_features.feature_importances_
+
+# Sort features by their importance
+sorted_features = [feature for _, feature in sorted(zip(feature_importances, X_train.columns), reverse=True)]
+
+# Incrementally add features and track MAE, up to 50 features
+max_features = 100
+mae_scores = []
+features_used = []
+
+for i in range(1, max_features + 1):
+    selected_features = sorted_features[:i]
+    features_used.append(selected_features)
+    
+    # Train model with the selected features
+    model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+    model.fit(X_train[selected_features], y_train)
+    
+    # Make predictions and calculate MAE
+    y_pred = model.predict(X_test[selected_features])
+    mae = mean_absolute_error(y_test, y_pred)
+    mae_scores.append(mae)
+
+    print(f"MAE with top {i} features: {mae}")
+
+# Find the number of features with the lowest MAE
+optimal_feature_count = mae_scores.index(min(mae_scores)) + 1
+optimal_features = features_used[optimal_feature_count - 1]
+
+print(f"Optimal number of features: {optimal_feature_count}")
+print(f"Features for optimal MAE: {optimal_features}")
+
+# Top 20 features: MAE 4.3, top 50: MAE of 4.20 top 100: 3.91
+'''
+
+# ERROR ANALYSIS
+
+
+import pandas as pd
+
+# Assuming y_test and y_pred are defined (from your test set and model predictions)
+
+# Create a DataFrame for analysis
+error_analysis_df = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
+error_analysis_df['Error'] = error_analysis_df['Actual'] - error_analysis_df['Predicted']
+
+# Analyze error distribution
+error_analysis_df['Error'].describe()
+
+# You might want to visualize or further analyze where the largest errors are occurring
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Histogram of errors
+plt.figure(figsize=(10, 6))
+sns.histplot(error_analysis_df['Error'], bins=50, kde=True)
+plt.title('Distribution of Prediction Errors')
+plt.xlabel('Prediction Error')
+plt.ylabel('Frequency')
+plt.show()
+
+# Boxplot of errors
+plt.figure(figsize=(10, 6))
+sns.boxplot(x=error_analysis_df['Error'])
+plt.title('Box Plot of Prediction Errors')
+plt.xlabel('Prediction Error')
+plt.show()
+
+# The problem is that there are a lot of extreme outliers
+
+
+# HANDLING OUTLIERS
+
+'''
+# Calculate IQR
+Q1 = error_analysis_df['Error'].quantile(0.25)
+Q3 = error_analysis_df['Error'].quantile(0.75)
+IQR = Q3 - Q1
+
+# Define outliers
+outlier_threshold_upper = Q3 + 1.5 * IQR
+outlier_threshold_lower = Q1 - 1.5 * IQR
+
+# Filter outliers
+outliers = error_analysis_df[(error_analysis_df['Error'] > outlier_threshold_upper) | 
+                             (error_analysis_df['Error'] < outlier_threshold_lower)]
+
+outliers
+
+# Merge outliers with original data to analyze them
+outliers_full_data = outliers.join(X_test, how='left')
+
+
+# IF WE REMOVE THE OUTLIERS
+# Assuming 'outliers' is a DataFrame containing the outliers with their indices
+outlier_indices = outliers.index.tolist()
+
+# Ensure that the indices are in the X_train index
+outlier_indices = [index for index in outlier_indices if index in X_train.index]
+
+# Remove these indices from the training set
+X_train_filtered = X_train.drop(index=outlier_indices)
+y_train_filtered = y_train.drop(index=outlier_indices)
+
+# Retrain the model with the filtered dataset
+model.fit(X_train_filtered, y_train_filtered)
+
+# Make predictions on the test set and calculate MAE
+y_pred = model.predict(X_test)
+mae_filtered = mean_absolute_error(y_test, y_pred)
+print(f"Mean Absolute Error after removing outliers: {mae_filtered}")
+
+# MAE 3.43
+
+# IF WE TRANSFORM THE OUTLIERS
+
+# Apply a logarithmic transformation to 'year'
+y_train_log_transformed = np.log(y_train - y_train.min() + 1)
+
+# Retrain the model
+model.fit(X_train, y_train_log_transformed)
+
+# Make predictions and reverse the transformation
+y_pred_log_transformed = model.predict(X_test)
+y_pred_transformed_back = np.exp(y_pred_log_transformed) + y_train.min() - 1
+mae_transformed = mean_absolute_error(y_test, y_pred_transformed_back)
+print(f"Mean Absolute Error after log transformation: {mae_transformed}")
+
+# I WAS SO HOPEFUL, but then the MAE is 3.50..
+
+# IF WE CAP OUTLIERS
+
+# Define capping function
+def cap_series(s, lower_threshold, upper_threshold):
+    return s.apply(lambda x: min(max(x, lower_threshold), upper_threshold))
+
+# Cap the 'year' in the training set
+y_train_capped = cap_series(y_train, outlier_threshold_lower, outlier_threshold_upper)
+
+# Retrain the model
+model.fit(X_train, y_train_capped)
+
+# Make predictions as before
+y_pred_capped = model.predict(X_test)
+mae_capped = mean_absolute_error(y_test, y_pred_capped)
+print(f"Mean Absolute Error after capping outliers: {mae_capped}")
+'''
+
+# CONTINUE ERROR ANALYSIS
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error
+
+# Assuming y_test and y_pred are already defined
+error_analysis_df = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
+error_analysis_df['Error'] = error_analysis_df['Actual'] - error_analysis_df['Predicted']
+
+# Define a high-error threshold, here I'm using the 75th percentile of absolute errors
+high_error_threshold = error_analysis_df['Error'].abs().quantile(0.75)
+
+# Identify high-error instances
+high_error_instances = error_analysis_df[abs(error_analysis_df['Error']) > high_error_threshold]
+
+# Combine the high-error instances with the original data to get feature values
+high_error_full_data = high_error_instances.join(X_test, how='left')
+
+# Conduct analysis on the high-error instances
+# Statistical summary of high-error instances
+high_error_summary = high_error_full_data.describe()
+
+# Compare with low-error instances
+low_error_instances = error_analysis_df[abs(error_analysis_df['Error']) <= high_error_threshold]
+low_error_full_data = low_error_instances.join(X_test, how='left')
+low_error_summary = low_error_full_data.describe()
+
+# Correlation of features with errors
+feature_error_correlation = high_error_full_data.corrwith(error_analysis_df['Error'])
+
+'''
+# Visualize high-error feature distributions compared to low-error instances
+for feature in X_test.columns:
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(high_error_full_data[feature], label='High Error')
+    sns.kdeplot(low_error_full_data[feature], label='Low Error')
+    plt.title(f'Distribution of {feature} for High vs. Low Error Instances')
+    plt.legend()
+    plt.show()
+'''
+# Print statistical summaries
+print("High error instances summary:")
+print(high_error_summary)
+print("\nLow error instances summary:")
+print(low_error_summary)
+
+# Print correlation of features with errors
+print("\nCorrelation of features with errors:")
+print(feature_error_correlation.sort_values(ascending=False))
+
+# FEATURE RELEVANCE
+
+# Finding the feature which highly correlates with the error
+# Assuming feature_error_correlation is already defined and sorted by correlation with error
+high_corr_features = feature_error_correlation.abs().sort_values(ascending=False).head(5).index.tolist()
+
+# Display the top correlated features and their correlation values
+print(feature_error_correlation[high_corr_features])
+
+# Let's assume `high_corr_features` is the list of features sorted by their correlation with the error
+# And the first element is 'Actual', which we want to skip
+
+# Exclude the 'Actual' key from your feature list, assuming 'Actual' is the first in the list
+for feature in high_corr_features[1:]:  # This excludes the first element, 'Actual'
+    # Check if the feature exists in X_train to avoid KeyError
+    if feature in X_train.columns:
+        sns.jointplot(x=X_train[feature], y=y_train, kind='reg')
+        plt.xlabel(feature)
+        plt.ylabel('Year')
+        plt.title(f'Relationship of {feature} with Year')
+        plt.show()
+
+
+# Drop 3 features
+X_train_refined = X_train.drop('title_russian','publisher_Association for Computational Linguistics','Relationship of publisher_Association for Computational Linguistics with Year', axis=1)
+X_test_refined = X_test.drop('title_russian','publisher_Association for Computational Linguistics','Relationship of publisher_Association for Computational Linguistics with Year', axis=1)
+
+# Re-train the model
+model.fit(X_train_refined, y_train)
+
+# Evaluate the model
+y_pred_refined = model.predict(X_test_refined)
+mae_refined = mean_absolute_error(y_test, y_pred_refined)
+print(f"Refined MAE: {mae_refined}")
+
+#MAE Still 3.39
+
+# Correlation with errors, but for non-binary features
+# (the ones that are not one hot encoded)
+
+# Assuming X_train and y_train are already defined and are your feature set and target variable, respectively.
+
+# Identify non-binary features
+non_binary_features = [col for col in X_train.columns if len(X_train[col].unique()) > 2]
+
+# Now, let's perform error correlation on non-binary features only
+# First, let's calculate the errors
+y_pred = model.predict(X_train)
+errors = y_train - y_pred
+
+# Create a DataFrame from non-binary features
+X_train_non_binary = X_train[non_binary_features]
+
+# Calculate the correlation of each non-binary feature with the error
+feature_error_correlation_non_binary = X_train_non_binary.apply(lambda x: x.corr(errors))
+
+# Sort the features by their correlation with error
+sorted_correlation_non_binary = feature_error_correlation_non_binary.abs().sort_values(ascending=False)
+
+# Now you can print or visualize the sorted correlations
+print(sorted_correlation_non_binary)
