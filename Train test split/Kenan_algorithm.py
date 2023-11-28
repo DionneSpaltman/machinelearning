@@ -364,6 +364,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler
 import xgboost as xgb
+
 # import tensorflow as tf
 # from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Dense
@@ -472,3 +473,6 @@ print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
 # Calculate Mean Absolute Error
 mae = mean_absolute_error(y_test, y_pred)
 print(f"Mean Absolute Error: {mae}")
+
+# Time taken: 6 minutes
+# MAE: 3.53
