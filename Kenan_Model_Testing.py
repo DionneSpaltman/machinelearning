@@ -149,7 +149,7 @@ title_tfidf = vectorizer.fit_transform(data['title_processed'])
 # Convert to DataFrame
 title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 title_tfidf_df
-
+'''
 # Lowercase Abstract
 data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
@@ -159,8 +159,66 @@ abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 # Convert 'abstract' TF-IDF to DataFrame
 abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
-
+'''
 data.info()
+
+# FROM FABIAN:
+
+from sklearn.feature_extraction.text import HashingVectorizer
+# Lowercase Abstract
+data['abstract_processed'] = data['abstract'].fillna('').str.lower()
+
+# Feature Extraction: TF-IDF for 'abstract'
+abstract_vectorizer = HashingVectorizer(n_features=1000, ngram_range=(1,1), lowercase=True)  # Limit features to 1000
+abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
+
+
+# Convert 'abstract' TF-IDF to DataFrame
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(1000)])
+# abstract_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
+
+i
+
+
+# LENGTH OF ABSTRACT FEATURE
+
+data['abstract_length'] = data['abstract_processed'].apply(len)
+
+# FINDING WHETHER THE YEAR IS WRITTEN IN ABSTRACT / TITLE
+ 
+import pandas as pd
+import re
+
+# Assume 'data' is your DataFrame and it has 'title' and 'abstract' columns
+
+# Function to check for a year between 1950 and 2022 in the text
+def year_in_text(text):
+    # Convert None to an empty string
+    if text is None:
+        return 0
+    # This regex will match any four consecutive digits between 1950 and 2022
+    year_pattern = r'\b(19[5-9]\d|20[0-1]\d|2022)\b'
+    return int(bool(re.search(year_pattern, text)))
+
+# Apply the function to the 'abstract' column
+data['year_in_abstract'] = data['abstract'].apply(year_in_text)
+
+# Apply the function to title and abstract columns
+data['year_in_title'] = data['title'].apply(year_in_text)
+
+data = data.copy()
+# Display the new columns
+print(data[['year_in_title', 'year_in_abstract']])
+
+data['year_in_title'].describe
+
+# Assuming 'year' is your target variable and is already defined
+year_in_title_corr = data['year'].corr(data['year_in_title'])
+year_in_abstract_corr = data['year'].corr(data['year_in_abstract'])
+
+print(f"Correlation between 'year' and 'year_in_title': {year_in_title_corr}")
+print(f"Correlation between 'year' and 'year_in_abstract': {year_in_abstract_corr}")
+
 
 '''
 # RANDOM FOREST MODEL PART 1
