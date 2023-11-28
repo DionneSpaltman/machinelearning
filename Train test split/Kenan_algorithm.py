@@ -273,7 +273,7 @@ categories, counts = zip(*frequency_categories.items())
 data['author_count'] = data['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 
 # Identify authors with 50+ publications
-prolific_authors = [author for author, count in author_frequencies.items() if count >= 30]
+prolific_authors = [author for author, count in author_frequencies.items() if count >= 20]
 
 # One-hot encode these authors
 for author in prolific_authors:
@@ -364,7 +364,6 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler
 import xgboost as xgb
-
 # import tensorflow as tf
 # from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Dense
@@ -384,7 +383,7 @@ print(X)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-# model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
+model = RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42)
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------
@@ -403,10 +402,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------------
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.callbacks import EarlyStopping
-from sklearn.preprocessing import MinMaxScaler
+# from keras.models import Sequential
+# from keras.layers import Dense, Dropout
+# from keras.callbacks import EarlyStopping
+# from sklearn.preprocessing import MinMaxScaler
 
 # Define the desired range for the target variable
 # target_min, target_max = 1952, 2023
@@ -416,37 +415,34 @@ from sklearn.preprocessing import MinMaxScaler
 # y_train = (y_train - target_mean) / (target_max - target_min)
 # y_test = (y_test - target_mean) / (target_max - target_min)
 
-min_max_scaler = MinMaxScaler()
-X_train= min_max_scaler.fit_transform(X_train)
-X_test = min_max_scaler.transform(X_test)
 
-model = Sequential()
-model.add(Dense(100, input_shape=(X_train.shape[1],), activation='relu')) # (features,)
-model.add(Dropout(0.5)) 
-model.add(Dense(50, activation='relu'))
-model.add(Dropout(0.3)) 
-model.add(Dense(25, activation='relu'))
-model.add(Dense(1, activation='linear')) # output node
-model.summary() # see what your model looks like
+# model = Sequential()
+# model.add(Dense(100, input_shape=(X_train.shape[1],), activation='relu')) # (features,)
+# model.add(Dropout(0.5)) 
+# model.add(Dense(50, activation='relu'))
+# model.add(Dropout(0.3)) 
+# model.add(Dense(25, activation='relu'))
+# model.add(Dense(1, activation='linear')) # output node
+# model.summary() # see what your model looks like
 
 # compile the model
-model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+# model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 
 # early stopping callback
-es = EarlyStopping(monitor='val_loss',
-                   mode='min',
-                   patience=20,
-                   restore_best_weights = True)
+# es = EarlyStopping(monitor='val_loss',
+#                    mode='min',
+#                    patience=20,
+#                    restore_best_weights = True)
 
 # fit the model!
 # attach it to a new variable called 'history' in case
 # to look at the learning curves
-model.fit(X_train, y_train,
-                    validation_data = (X_test, y_test),
-                    callbacks=[es],
-                    epochs=100,
-                    batch_size=32,
-                    verbose=1)
+# model.fit(X_train, y_train,
+#                     validation_data = (X_test, y_test),
+#                     callbacks=[es],
+#                     epochs=100,
+#                     batch_size=32,
+#                     verbose=1)
 
 #--------------------------------------------------------------------------------------------------------
 
@@ -454,7 +450,7 @@ model.fit(X_train, y_train,
 train_start_time = time.time()
 
 # Train the model
-# model.fit(X_train, y_train)
+model.fit(X_train, y_train)
 
 # Stop the training timer and print the time taken
 train_end_time = time.time()
@@ -473,6 +469,3 @@ print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
 # Calculate Mean Absolute Error
 mae = mean_absolute_error(y_test, y_pred)
 print(f"Mean Absolute Error: {mae}")
-
-# Time taken: 6 minutes
-# MAE: 3.53
