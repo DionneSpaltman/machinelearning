@@ -288,6 +288,7 @@ data.shape
 # Importing further Text-processing techniques
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import linear_kernel
 
 # TfidfVectorizer (n = 500)= 3.7
 # Hashing Vectorizer (n = 1000) = 3.40
@@ -321,7 +322,8 @@ data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
 # vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
-vectorizer = CountVectorizer(analyzer='word', ngram_range=(1,1), lowercase=True)
+vectorizer = CountVectorizer(analyzer='word', ngram_range=(1,1), lowercase=True) 
+# with stripaccent --> 4.54
 title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
 # Convert to DataFrame
@@ -333,7 +335,7 @@ title_tfidf_df
 data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000
+abstract_vectorizer = HashingVectorizer(n_features=1000, ngram_range=(1,1), lowercase=True)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 
@@ -380,20 +382,8 @@ print(X)
 # Splitting the dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Define the desired range for the target variable
-target_min, target_max = 1952, 2023
-target_mean = 2012
-
-# Scale the target variable to the desired range
-y_train = (y_train - target_mean) / (target_max - target_min)
-y_test = (y_test - target_mean) / (target_max - target_min)
-
-min_max_scaler = MinMaxScaler()
-X_train= min_max_scaler.fit_transform(X_train)
-X_test = min_max_scaler.transform(X_test)
-
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=100, max_depth = 3, n_jobs=-1, random_state=42)
+# model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------
@@ -412,10 +402,10 @@ model = RandomForestRegressor(n_estimators=100, max_depth = 3, n_jobs=-1, random
 
 
 # -------------------------------------------------------------------------------------------------------------------------------------------
-# from keras.models import Sequential
-# from keras.layers import Dense, Dropout
-# from keras.callbacks import EarlyStopping
-# from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from keras.callbacks import EarlyStopping
+from sklearn.preprocessing import MinMaxScaler
 
 # Define the desired range for the target variable
 # target_min, target_max = 1952, 2023
@@ -425,37 +415,37 @@ model = RandomForestRegressor(n_estimators=100, max_depth = 3, n_jobs=-1, random
 # y_train = (y_train - target_mean) / (target_max - target_min)
 # y_test = (y_test - target_mean) / (target_max - target_min)
 
-# min_max_scaler = MinMaxScaler()
-# X_train= min_max_scaler.fit_transform(X_train)
-# X_test = min_max_scaler.transform(X_test)
+min_max_scaler = MinMaxScaler()
+X_train= min_max_scaler.fit_transform(X_train)
+X_test = min_max_scaler.transform(X_test)
 
-# model = Sequential()
-# model.add(Dense(100, input_shape=(X_train.shape[1],), activation='relu')) # (features,)
-# model.add(Dropout(0.5)) 
-# model.add(Dense(50, activation='relu'))
-# model.add(Dropout(0.3)) 
-# model.add(Dense(25, activation='relu'))
-# model.add(Dense(1, activation='linear')) # output node
-# model.summary() # see what your model looks like
+model = Sequential()
+model.add(Dense(100, input_shape=(X_train.shape[1],), activation='relu')) # (features,)
+model.add(Dropout(0.5)) 
+model.add(Dense(50, activation='relu'))
+model.add(Dropout(0.3)) 
+model.add(Dense(25, activation='relu'))
+model.add(Dense(1, activation='linear')) # output node
+model.summary() # see what your model looks like
 
 # compile the model
-# model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
+model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 
 # early stopping callback
-# es = EarlyStopping(monitor='val_loss',
-#                    mode='min',
-#                    patience=10,
-#                    restore_best_weights = True)
+es = EarlyStopping(monitor='val_loss',
+                   mode='min',
+                   patience=20,
+                   restore_best_weights = True)
 
 # fit the model!
 # attach it to a new variable called 'history' in case
 # to look at the learning curves
-# model.fit(X_train, y_train,
-#                     validation_data = (X_test, y_test),
-#                     callbacks=[es],
-#                     epochs=50,
-#                     batch_size=32,
- #                    verbose=1)
+model.fit(X_train, y_train,
+                    validation_data = (X_test, y_test),
+                    callbacks=[es],
+                    epochs=100,
+                    batch_size=32,
+                    verbose=1)
 
 #--------------------------------------------------------------------------------------------------------
 
@@ -463,7 +453,7 @@ model = RandomForestRegressor(n_estimators=100, max_depth = 3, n_jobs=-1, random
 train_start_time = time.time()
 
 # Train the model
-model.fit(X_train, y_train)
+# model.fit(X_train, y_train)
 
 # Stop the training timer and print the time taken
 train_end_time = time.time()

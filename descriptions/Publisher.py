@@ -167,6 +167,12 @@ abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 # Convert 'abstract' TF-IDF to DataFrame
 abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
 data = pd.concat([data, abstract_tfidf_df], axis=1)
+# ------------------------------------------------------------------------------------------------------
+publisher_vectorizer = CountVectorizer(analyzer='word', ngram_range=(1,1), lowercase=True)
+publisher_vec = publisher_vectorizer.fit_transform(data['publisher'])
+
+# Convert to DataFrame
+publisher_vec_df = pd.DataFrame(publisher_vec.toarray(), columns=publisher_vectorizer.get_feature_names_out())
 
 
 #-------------------------------------------------------------------------------------------------------
