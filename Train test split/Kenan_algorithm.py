@@ -334,6 +334,8 @@ title_tfidf_df
 # Lowercase Abstract
 data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
+# data['abstract_length'] = data['abstract_processed'].apply(len)
+
 # Feature Extraction: TF-IDF for 'abstract'
 abstract_vectorizer = HashingVectorizer(n_features=1000, ngram_range=(1,1), lowercase=True)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
@@ -363,27 +365,33 @@ from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import KBinsDiscretizer
 import xgboost as xgb
 # import tensorflow as tf
 # from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Dense
 # import lightgbm as lgb
-
+# kb = KBinsDiscretizer(n_bins=20, strategy='uniform', encode='onehot-dense', subsample = None)
 
 import pandas as pd
+import numpy as np
 import time
 
 X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
                 title_tfidf_df, abstract_tfidf_df], axis=1).copy()
 y = data['year']
+y = np.log1p(y)
+# kb.fit(X)
+# X_binned = kb.transform(X)
 
 print(X)
+weights = y / y.max() 
 
 # Splitting the dataset
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test, weights_train, weights_test = train_test_split(X, y, weights, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42)
+model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------
@@ -450,7 +458,7 @@ model = RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random
 train_start_time = time.time()
 
 # Train the model
-model.fit(X_train, y_train)
+model.fit(X_train, y_train, sample_weight=weights_train)
 
 # Stop the training timer and print the time taken
 train_end_time = time.time()
@@ -466,6 +474,10 @@ y_pred = model.predict(X_test)
 predict_end_time = time.time()
 print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
 
+# Transform the predicted values back to the original scale
+y_pred_original_scale = np.expm1(y_pred)
+y_test_original_scale = np.expm1(y_test)
+
 # Calculate Mean Absolute Error
-mae = mean_absolute_error(y_test, y_pred)
+mae = mean_absolute_error(y_test_original_scale, y_pred_original_scale)
 print(f"Mean Absolute Error: {mae}")
