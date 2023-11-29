@@ -162,7 +162,8 @@ abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vect
 '''
 data.info()
 
-# FROM FABIAN:
+# FROM FABIAN - Use Hashing Vectorizer instead of TDF IF
+# In my case, the MAE increases from 3.35 to 3.36
 
 from sklearn.feature_extraction.text import HashingVectorizer
 # Lowercase Abstract
@@ -448,9 +449,24 @@ train_start_time = time.time()
 # Train the model
 model.fit(X_train, y_train)
 
-# Stop the training timer and print the time taken
-train_end_time = time.time()
-print(f"Training Time: {train_end_time - train_start_time} seconds")
+# ... [your existing code] ...
+
+# Start the prediction timer
+predict_start_time = time.time()
+
+# Predict on the testing set
+y_pred_uncapped = model.predict(X_test)
+
+# Cap the predictions to be within the range 1970 to 2021
+y_pred = np.clip(y_pred_uncapped, 1970, 2021)
+
+# Stop the prediction timer and print the time taken
+predict_end_time = time.time()
+print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
+
+# Calculate Mean Absolute Error using the capped predictions
+mae = mean_absolute_error(y_test, y_pred)
+print(f"Mean Absolute Error with capped predictions: {mae}")
 
 # Start the prediction timer
 predict_start_time = time.time()
@@ -461,6 +477,24 @@ y_pred = model.predict(X_test)
 # Stop the prediction timer and print the time taken
 predict_end_time = time.time()
 print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
+
+# 28 Nov Addition: cap results to be 1970-2021
+
+def cap_predictions(predictions, lower_bound, upper_bound):
+    # Cap predictions to be within lower_bound and upper_bound
+    predictions_capped = np.clip(predictions, lower_bound, upper_bound)
+    return predictions_capped
+
+# Assume model is your trained RandomForestRegressor and X_test is your test set
+predictions = model.predict(X_test)
+
+# Cap the predictions to be within the range 1970 to 2021
+predictions_capped = cap_predictions(predictions, 1980, 2021)
+
+# Now use predictions_capped for further evaluation
+mae_capped = mean_absolute_error(y_test, predictions_capped)
+print(f"Mean Absolute Error with capped predictions: {mae_capped}")
+
 
 # Calculate Mean Absolute Error
 mae = mean_absolute_error(y_test, y_pred)
