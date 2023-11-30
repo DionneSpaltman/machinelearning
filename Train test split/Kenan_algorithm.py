@@ -24,7 +24,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 
-# WHOLE DATA
+# -------------------------------------------------Whole data-------------------------------------------------#
 
 data = pd.read_json('input/train.json')
 print(data.head())
@@ -36,8 +36,7 @@ print(data.info())
 print(data.describe())
 
 
-# YEAR COLUMN
-
+# -------------------------------------------------Year column-------------------------------------------------#
 
 # Distribution of the 'year' field
 print(data['year'].value_counts())
@@ -55,8 +54,7 @@ sns.set()
 # plt.show()
 
 
-# ENTRYTYPE COLUMN
-
+# -------------------------------------------------Entrytype column-------------------------------------------------#
 
 print(data['ENTRYTYPE'].unique())
 # Only 3 types, probably good to use One-Hot Encoding
@@ -77,8 +75,7 @@ entrytype_counts = data[['entrytype_article', 'entrytype_inproceedings', 'entryt
 print(entrytype_counts)
 
 
-# EDITOR COLUMN
-
+# -------------------------------------------------Editor column-------------------------------------------------#
 
 # Count null values in the 'editor' column
 null_count = data['editor'].isnull().sum()
@@ -89,7 +86,8 @@ data.drop('editor', axis=1, inplace=True)
 print(data.info())
 
 
-# PUBLISHER COLUMN
+# -------------------------------------------------Publisher column-------------------------------------------------#
+
 
 
 # Display unique values in the 'publisher' column
@@ -178,7 +176,7 @@ data = pd.concat([data, publisher_dummies], axis=1)
 # --------------------------------------------------------------------------------
 # CountVectorizer for publisher
 
-# AUTHOR COLUMN
+# -------------------------------------------------Author column-------------------------------------------------#
 
 # Flatten the list of authors
 all_authors = set()
@@ -315,7 +313,7 @@ from sklearn.metrics.pairwise import linear_kernel
 
 
 
-# TITLE and ABSTRACT COLUMNS
+# -------------------------------------------------Title and abstract-------------------------------------------------#
 
 # Make Lower case
 data['title_processed'] = data['title'].str.lower()
@@ -351,6 +349,7 @@ from transformers import DistilBertTokenizer, DistilBertModel
 import torch
 
 
+# -------------------------------------------------Random Forest-------------------------------------------------#
 
 # NOW, LET'S DO RANDOM FOREST WITH ALL THE FEATURES TREATED
 
@@ -366,7 +365,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import KBinsDiscretizer
-import xgboost as xgb
+#import xgboost as xgb
 # import tensorflow as tf
 # from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Dense
