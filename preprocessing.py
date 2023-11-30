@@ -1,4 +1,5 @@
 """
+Helllloooo 
 Here are how each feature is treated in this file:
 1. Entrytype: One-hot encoded as 3 variables
 2. Editor: too many Missing Values, so it's dropped

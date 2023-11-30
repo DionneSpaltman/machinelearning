@@ -1,12 +1,12 @@
 import time
 from sys import argv
 import pandas as pd
-from machinelearning.baseline import baseline
-from machinelearning.baseline_improved import baseline_improved
-from machinelearning.randomforest_chatgpt import randomforest_chatgpt
-from machinelearning.perceptron import perceptron
-from machinelearning.splitdata20_80 import splitdata20_80
-from preprocessing_copy import year_column, entrytype_column, editor_column, publisher_column, author_column, title_abstract, preparing_data
+from baseline import baseline
+from baseline_improved import baseline_improved
+from randomforest_chatgpt import randomforest_chatgpt
+from perceptron import perceptron
+from splitdata20_80 import splitdata20_80
+from bin.preprocessing_copy import year_column, entrytype_column, editor_column, publisher_column, author_column, title_abstract, preparing_data
 
 def run_baseline():
     start_time = time.time()
