@@ -46,8 +46,9 @@ def baseline():
     logging.info(f"Predicting on test")
     pred = ridge.predict(test)
     test['year'] = pred
+    print(test['year'].head(10))
     logging.info("Writing prediction file")
     test.to_json("predicted.json", orient='records', indent=2)
     
-#baseline()
+baseline()
 
