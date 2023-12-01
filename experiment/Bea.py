@@ -7,10 +7,10 @@ ABSTRACT: fill missing values with no_abstract + use countVectonizer
 TITLE: max features to 1000 + use_idf=False
 EDITOR: adding editor column with just number of editors
 
---> error in total decreased from 3.53 to 3.332"""
+--> error in total decreased from 3.53 to 3.321"""
 
-# max_features to 1000 = 3.332
-# max_features to 2000 = 3.300 (but took a lot of time and my computer went crazy)
+# max_features to 1000 = 3.321
+# max_features to 2000 = 3.277
 
 
 
@@ -135,7 +135,7 @@ data['author_count'] = data['author'].apply(lambda x: len(x) if isinstance(x, li
 data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
-vectorizer = TfidfVectorizer(stop_words='english', max_features=1000, use_idf=False)  # Limit features to 1000 for simplicity
+vectorizer = TfidfVectorizer(stop_words='english', max_features=2000, use_idf=False)  # Limit features to 1000 for simplicity
 title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
 # Convert to DataFrame
