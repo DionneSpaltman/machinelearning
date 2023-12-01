@@ -275,11 +275,31 @@ data['author_count'] = data['author'].apply(lambda x: len(x) if isinstance(x, li
 # Identify authors with 50+ publications
 prolific_authors = [author for author, count in author_frequencies.items() if count >= 20]
 
+# --------------------------------------------------------------------------------------------------------
 # One-hot encode these authors
 for author in prolific_authors:
     data[f'author_{author}'] = data['author'].apply(lambda x: author in x if isinstance(x, list) else False)
-
 prolific_authors
+# ----------------------------------------------------------------------------------------------------------
+
+# Convert the list of prolific authors into a string representation
+# prolific_authors_str = ' '.join(prolific_authors)
+
+# Use CountVectorizer to create features based on author occurrences
+# author_vectorizer = CountVectorizer(analyzer=lambda x: [1 if author in x else 0 for author in prolific_authors], lowercase=False)
+# author_counts = author_vectorizer.fit_transform(data['author'].apply(lambda x: ' '.join(x) if isinstance(x, list) else ''))
+
+# Convert to DataFrame and concatenate with the original data
+# author_counts_df = pd.DataFrame(author_counts.toarray(), index=data.index)
+
+# Set column names to be strings
+# author_counts_df.columns = author_counts_df.columns.astype(str)
+
+# Concatenate with the original data
+# data = pd.concat([data, author_counts_df], axis=1)
+
+# Drop the original 'author' column
+# data.drop('author', axis=1, inplace=True)
 
 # Now our dataframe has 347 columns..
 data.shape
@@ -337,12 +357,21 @@ data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 # data['abstract_length'] = data['abstract_processed'].apply(len)
 
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = HashingVectorizer(n_features=1000, ngram_range=(1,1), lowercase=True)  # Limit features to 1000
+abstract_vectorizer = HashingVectorizer(n_features=750, ngram_range=(1,1), lowercase=True)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
-
+# n_features = 1000 --> 4.5494
+# n_features = 750 --> 4.5493
+# n_features = 750 --> 4.5524
+# Convert 'abstract' TF-IDF to DataFrame
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(750)])
+# ------------------------------------------------------------------------------------------------------------
+# Feature Extraction: TF-IDF for 'abstract'
+# abstract_vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500
+# abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 # Convert 'abstract' TF-IDF to DataFrame
-abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(1000)])
+# abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
+
 # abstract_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 
 import pandas as pd
@@ -396,8 +425,10 @@ weights = y / y.max()
 X_train, X_test, y_train, y_test, weights_train, weights_test = train_test_split(X, y, weights, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=250, n_jobs=-1, random_state=42)
-# model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42)
+model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
+# RandomForestRegressor(n_estimators=250, n_jobs=-1, random_state=42) --> 3.2550
+# RandomForestRegressor(n_estimators=150, n_jobs=-1, random_state=42) --> 3.2639
+# RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42) --> 4.5494
 
 # ------------------------------------------------------------------------------------------------------------------------------------------
 # Experimenting different models and hyperparameters
@@ -407,7 +438,7 @@ model = RandomForestRegressor(n_estimators=250, n_jobs=-1, random_state=42)
 # SGDRegressor(max_iter = 100, default) --> 4.5
 # model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) 
 # learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42 --> 4.20
-# learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42 --> 3.47
+# learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42 --> 3.40
 # model = AdaBoostRegressor(n_estimators=50, learning_rate=1.0, random_state=42) --> 5.08
 # model = xgb.XGBRegressor(n_estimators=250, learning_rate=0.1, max_depth=25, random_state=42)
 # model = lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42) --> did not import library
@@ -486,3 +517,9 @@ y_test_original_scale = np.expm1(y_test)
 # Calculate Mean Absolute Error
 mae = mean_absolute_error(y_test_original_scale, y_pred_original_scale)
 print(f"Mean Absolute Error: {mae}")
+
+ # Make predictions on the test data 
+test = pd.read_json('input/test.json')
+pred = model.predict(test)
+test['year'] = pred
+test.to_json("predictions/final.json", orient='records', indent=2)
