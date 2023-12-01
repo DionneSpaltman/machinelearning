@@ -457,8 +457,8 @@ predict_start_time = time.time()
 # Predict on the testing set
 y_pred_uncapped = model.predict(X_test)
 
-# Cap the predictions to be within the range 1970 to 2021
-y_pred = np.clip(y_pred_uncapped, 1970, 2021)
+# Cap the predictions to be within the range 1980 to 2023
+y_pred = np.clip(y_pred_uncapped, 1980, 2023)
 
 # Stop the prediction timer and print the time taken
 predict_end_time = time.time()
@@ -488,8 +488,8 @@ def cap_predictions(predictions, lower_bound, upper_bound):
 # Assume model is your trained RandomForestRegressor and X_test is your test set
 predictions = model.predict(X_test)
 
-# Cap the predictions to be within the range 1970 to 2021
-predictions_capped = cap_predictions(predictions, 1980, 2021)
+# Cap the predictions to be within the range 1980 to 2023
+predictions_capped = cap_predictions(predictions, 1980, 2023)
 
 # Now use predictions_capped for further evaluation
 mae_capped = mean_absolute_error(y_test, predictions_capped)
