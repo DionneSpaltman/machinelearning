@@ -2,10 +2,16 @@
 
 
 """changes:
-ABSTRACT: fill missing values with no_abstract + use countVectonizer + also variable len of abstarct
+ABSTRACT: fill missing values with no_abstract + use countVectonizer
+ + also variable len of abstarct + max_features to 1000
+TITLE: max features to 1000 + use_idf=False
 EDITOR: adding editor column with just number of editors
 
---> error in total decreased from 3.53 to 3.4189"""
+--> error in total decreased from 3.53 to 3.321"""
+
+# max_features to 1000 = 3.321
+# max_features to 2000 = 3.277
+
 
 
 from googletrans import Translator, constants
@@ -113,19 +119,6 @@ for count in author_frequencies.values():
 # Categories and counts for plotting
 categories, counts = zip(*frequency_categories.items())
 
-
-# So, most authors have few publications. For example, 
-# 59000 authors have 1-5 publications only.
-# Which means the majority does not have predictive power?
-# An idea: use one-hot encoding, but only for authors with 100+ publications (67 people, so 67 added features)
-# or 50+ publications, so 253 + 67 = 320 people (so 320 features)
-
-# Idea from chat GPT, instead of author names, maybe the number of authors in a publication can be a predictor
-# Let's make that a new feature
-
-# Assuming each entry in the 'author' column is a list of authors
-data['author_count'] = data['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
-
 # Identify authors with 50+ publications
 prolific_authors = [author for author, count in author_frequencies.items() if count >= 50]
 
@@ -133,6 +126,8 @@ prolific_authors = [author for author, count in author_frequencies.items() if co
 for author in prolific_authors:
     data[f'author_{author}'] = data['author'].apply(lambda x: author in x if isinstance(x, list) else False)
 
+# Assuming each entry in the 'author' column is a list of authors
+data['author_count'] = data['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 
 # TITLE and ABSTRACT COLUMNS
 
@@ -140,28 +135,29 @@ for author in prolific_authors:
 data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
-vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500 for simplicity
+vectorizer = TfidfVectorizer(stop_words='english', max_features=2000, use_idf=False)  # Limit features to 1000 for simplicity
 title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
 # Convert to DataFrame
 title_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 
+data['title_processed'] = data['title'].str.lower()
+
+
 # Lowercase Abstract 
 """ filling na with no_abstarct decreases error by around 0.04 and use CountVectonizer
 and using also lenght of abstarct as feature (together with countervectonizer) decreases error by 0.03"""
-
 
 data['abstract_processed'] = data['abstract'].fillna('no_abstract').str.lower()
 
 data['abstract_length'] = data['abstract_processed'].apply(len)
 
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = CountVectorizer(stop_words='english', max_features=500)  # Limit features to 500
+abstract_vectorizer = CountVectorizer(stop_words='english', max_features=1000)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 # Convert 'abstract' TF-IDF to DataFrame
 abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
-
 
 # NOW, LET'S DO RANDOM FOREST WITH ALL THE FEATURES TREATED
 
@@ -171,12 +167,8 @@ from sklearn.metrics import mean_absolute_error
 import pandas as pd
 import time
 
-#X = pd.concat(data.drop(['ENTRYTYPE', 'year', "title", "editor", "year", "publisher", "author", "abstract", 'abstract_processed']), axis=1).copy()
-#X = pd.concat([data.drop(['ENTRYTYPE', 'year', "title", "editor", "year", "publisher", "author", "abstract"], axis=1)], axis=1).copy()
-#X = pd.concat([data.drop(['ENTRYTYPE','year', 'title', "editor", 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
- #              title_tfidf_df, abstract_tfidf_df], axis=1).copy()
 X = pd.concat([data.drop(['ENTRYTYPE','year', 'title', "editor", 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
-               title_tfidf_df], axis=1).copy()
+               title_tfidf_df, abstract_tfidf_df], axis=1).copy()
 
 y = data['year']
 
@@ -212,40 +204,40 @@ print(f"Mean Absolute Error: {mae}")
 
 
 
+# HYPERPARAMETER TUNING
 
-""" experimented with neural networks, but got error: 14.81 (also needed to instal keras and tenserflow with pip)"""
-#from sklearn.model_selection import train_test_split
-#from sklearn.preprocessing import StandardScaler
-#from sklearn.metrics import mean_absolute_error
-#from keras.models import Sequential
-#from keras.layers import Dense
+#from sklearn.model_selection import RandomizedSearchCV
+#from sklearn.ensemble import RandomForestRegressor
 
-# Assuming X and y are already defined
+# Define the parameter grid to search
+#param_grid = {
+ #   'n_estimators': [100, 200, 300, 400, 500],
+  #  'max_features': ['auto', 'sqrt'],
+   # 'max_depth': [10, 20, 30, 40, 50, None],
+    #'min_samples_split': [2, 5, 10],
+    #'min_samples_leaf': [1, 2, 4],
+    #'bootstrap': [True, False]
+#}
 
-# Splitting the dataset
-#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Initialize the Random Forest Regressor
+#rf = RandomForestRegressor(random_state=42)
 
-# Standardize the features
-#scaler = StandardScaler()
-#X_train_scaled = scaler.fit_transform(X_train)
-#X_test_scaled = scaler.transform(X_test)
+# Initialize the RandomizedSearchCV object
+#rf_random_search = RandomizedSearchCV(estimator=rf, param_distributions=param_grid, n_iter=100, cv=5, verbose=2, random_state=42, n_jobs=-1)
 
-# Build the neural network model
-#model = Sequential()
-#model.add(Dense(64, input_dim=X_train_scaled.shape[1], activation='relu'))
-#model.add(Dense(32, activation='relu'))
-#model.add(Dense(1, activation='linear'))
+# Fit the random search model
+#rf_random_search.fit(X_train, y_train)
 
-# Compile the model
-#model.compile(loss='mean_absolute_error', optimizer='adam')
+# Print the best parameters found by RandomizedSearchCV
+#print("Best parameters found: ", rf_random_search.best_params_)
 
-# Train the model
-#model.fit(X_train_scaled, y_train, epochs=50, batch_size=32, validation_data=(X_test_scaled, y_test))
+# Evaluate the best model found on the test set
+#best_model = rf_random_search.best_estimator_
+#y_pred = best_model.predict(X_test)
+#mae = mean_absolute_error(y_test, y_pred)
+#print(f"Mean Absolute Error with best model: {mae}")
 
-# Predict on the testing set
-#y_pred_nn = model.predict(X_test_scaled)
-
-# Calculate Mean Absolute Error
-#mae_nn = mean_absolute_error(y_test, y_pred_nn)
-#print(f"Neural Network Mean Absolute Error: {mae_nn}")
+""" Result from hypertuning:  Best parameters found:  {'n_estimators': 200, 'min_samples_split': 5, 
+'min_samples_leaf': 1, 'max_features': 'sqrt', 'max_depth': None, 'bootstrap': True}
+Mean Absolute Error with best model: 3.4294981446638855"""
 

@@ -14,6 +14,8 @@ Then, from those cleaned data, this is what has been done:
 4. Hyperparameter Tuning
 """
 
+# deleted some import messages
+
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -24,7 +26,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 
-# -------------------------------------------------Whole data-------------------------------------------------#
+# WHOLE DATA
 
 data = pd.read_json('input/train.json')
 print(data.head())
@@ -36,7 +38,8 @@ print(data.info())
 print(data.describe())
 
 
-# -------------------------------------------------Year column-------------------------------------------------#
+# YEAR COLUMN
+
 
 # Distribution of the 'year' field
 print(data['year'].value_counts())
@@ -54,7 +57,8 @@ sns.set()
 # plt.show()
 
 
-# -------------------------------------------------Entrytype column-------------------------------------------------#
+# ENTRYTYPE COLUMN
+
 
 print(data['ENTRYTYPE'].unique())
 # Only 3 types, probably good to use One-Hot Encoding
@@ -75,7 +79,8 @@ entrytype_counts = data[['entrytype_article', 'entrytype_inproceedings', 'entryt
 print(entrytype_counts)
 
 
-# -------------------------------------------------Editor column-------------------------------------------------#
+# EDITOR COLUMN
+
 
 # Count null values in the 'editor' column
 null_count = data['editor'].isnull().sum()
@@ -86,8 +91,7 @@ data.drop('editor', axis=1, inplace=True)
 print(data.info())
 
 
-# -------------------------------------------------Publisher column-------------------------------------------------#
-
+# PUBLISHER COLUMN
 
 
 # Display unique values in the 'publisher' column
@@ -176,7 +180,7 @@ data = pd.concat([data, publisher_dummies], axis=1)
 # --------------------------------------------------------------------------------
 # CountVectorizer for publisher
 
-# -------------------------------------------------Author column-------------------------------------------------#
+# AUTHOR COLUMN
 
 # Flatten the list of authors
 all_authors = set()
@@ -273,31 +277,11 @@ data['author_count'] = data['author'].apply(lambda x: len(x) if isinstance(x, li
 # Identify authors with 50+ publications
 prolific_authors = [author for author, count in author_frequencies.items() if count >= 20]
 
-# --------------------------------------------------------------------------------------------------------
 # One-hot encode these authors
 for author in prolific_authors:
     data[f'author_{author}'] = data['author'].apply(lambda x: author in x if isinstance(x, list) else False)
+
 prolific_authors
-# ----------------------------------------------------------------------------------------------------------
-
-# Convert the list of prolific authors into a string representation
-# prolific_authors_str = ' '.join(prolific_authors)
-
-# Use CountVectorizer to create features based on author occurrences
-# author_vectorizer = CountVectorizer(analyzer=lambda x: [1 if author in x else 0 for author in prolific_authors], lowercase=False)
-# author_counts = author_vectorizer.fit_transform(data['author'].apply(lambda x: ' '.join(x) if isinstance(x, list) else ''))
-
-# Convert to DataFrame and concatenate with the original data
-# author_counts_df = pd.DataFrame(author_counts.toarray(), index=data.index)
-
-# Set column names to be strings
-# author_counts_df.columns = author_counts_df.columns.astype(str)
-
-# Concatenate with the original data
-# data = pd.concat([data, author_counts_df], axis=1)
-
-# Drop the original 'author' column
-# data.drop('author', axis=1, inplace=True)
 
 # Now our dataframe has 347 columns..
 data.shape
@@ -333,14 +317,14 @@ from sklearn.metrics.pairwise import linear_kernel
 
 
 
-# -------------------------------------------------Title and abstract-------------------------------------------------#
+# TITLE and ABSTRACT COLUMNS
 
 # Make Lower case
 data['title_processed'] = data['title'].str.lower()
 
 # Feature Extraction: TF-IDF
 # vectorizer = HashingVectorizer(n_features=1000)  # Limit features to 1000 for simplicity
-vectorizer = CountVectorizer(analyzer='word', ngram_range=(1,1), lowercase=True) 
+vectorizer = CountVectorizer(analyzer='word', ngram_range=(1,1), lowercase=True, max_features=500) 
 # with stripaccent --> 4.54
 title_tfidf = vectorizer.fit_transform(data['title_processed'])
 
@@ -352,40 +336,26 @@ title_tfidf_df
 # Lowercase Abstract
 data['abstract_processed'] = data['abstract'].fillna('').str.lower()
 
-# data['abstract_length'] = data['abstract_processed'].apply(len)
-
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = HashingVectorizer(n_features=750, ngram_range=(1,1), lowercase=True)  # Limit features to 1000
+abstract_vectorizer = HashingVectorizer(n_features=500, ngram_range=(1,1), lowercase=True)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
-# n_features = 1000 --> 4.5494
-# n_features = 750 --> 4.5493
-# n_features = 750 --> 4.5524
-# Convert 'abstract' TF-IDF to DataFrame
-abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(750)])
-# ------------------------------------------------------------------------------------------------------------
-# Feature Extraction: TF-IDF for 'abstract'
-# abstract_vectorizer = TfidfVectorizer(stop_words='english', max_features=500)  # Limit features to 500
-# abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
+
 
 # Convert 'abstract' TF-IDF to DataFrame
-# abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=abstract_vectorizer.get_feature_names_out())
-
+abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i}' for i in range(500)])
 # abstract_tfidf_df = pd.DataFrame(title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 
 import pandas as pd
 from sklearn.feature_extraction.text import HashingVectorizer
-from transformers import DistilBertTokenizer, DistilBertModel
-import torch
+from transformers import DistilBertTokenizer
 
 
-# -------------------------------------------------Random Forest-------------------------------------------------#
 
 # NOW, LET'S DO RANDOM FOREST WITH ALL THE FEATURES TREATED
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
-from sklearn.svm import SVR
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import SGDClassifier
@@ -394,40 +364,27 @@ from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import KBinsDiscretizer
-#import xgboost as xgb
 # import tensorflow as tf
 # from tensorflow.keras.models import Sequential
 # from tensorflow.keras.layers import Dense
 # import lightgbm as lgb
-# kb = KBinsDiscretizer(n_bins=20, strategy='uniform', encode='onehot-dense', subsample = None)
+
 
 import pandas as pd
-import numpy as np
 import time
 
 X = pd.concat([data.drop(['year', 'title', 'abstract', 'publisher', 'author', 'title_processed', 'abstract_processed'], axis=1),
                 title_tfidf_df, abstract_tfidf_df], axis=1).copy()
-# trim_percentage = 5
-# lower_bound = np.percentile(data['year'], trim_percentage)
-# mask = data['year'] >= lower_bound
-# y = data.loc[mask, 'year']
 y = data['year']
-y = np.log1p(y)
-# kb.fit(X)
-# X_binned = kb.transform(X)
 
 print(X)
-weights = y / y.max() 
 
 # Splitting the dataset
-X_train, X_test, y_train, y_test, weights_train, weights_test = train_test_split(X, y, weights, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
-# RandomForestRegressor(n_estimators=250, n_jobs=-1, random_state=42) --> 3.2550
-# RandomForestRegressor(n_estimators=150, n_jobs=-1, random_state=42) --> 3.2639
-# RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42) --> 4.5494
+model = RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42)
+
 
 # ------------------------------------------------------------------------------------------------------------------------------------------
 # Experimenting different models and hyperparameters
@@ -437,7 +394,7 @@ model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
 # SGDRegressor(max_iter = 100, default) --> 4.5
 # model = GradientBoostingRegressor(learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42) 
 # learning_rate=0.1, n_estimators=100, max_depth=3, random_state=42 --> 4.20
-# learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42 --> 3.40
+# learning_rate=0.1, n_estimators=250, max_depth=15, random_state=42 --> 3.47
 # model = AdaBoostRegressor(n_estimators=50, learning_rate=1.0, random_state=42) --> 5.08
 # model = xgb.XGBRegressor(n_estimators=250, learning_rate=0.1, max_depth=25, random_state=42)
 # model = lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42) --> did not import library
@@ -493,7 +450,7 @@ model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
 train_start_time = time.time()
 
 # Train the model
-model.fit(X_train, y_train, sample_weight=weights_train)
+model.fit(X_train, y_train)
 
 # Stop the training timer and print the time taken
 train_end_time = time.time()
@@ -509,16 +466,6 @@ y_pred = model.predict(X_test)
 predict_end_time = time.time()
 print(f"Prediction Time: {predict_end_time - predict_start_time} seconds")
 
-# Transform the predicted values back to the original scale
-y_pred_original_scale = np.expm1(y_pred)
-y_test_original_scale = np.expm1(y_test)
-
 # Calculate Mean Absolute Error
-mae = mean_absolute_error(y_test_original_scale, y_pred_original_scale)
+mae = mean_absolute_error(y_test, y_pred)
 print(f"Mean Absolute Error: {mae}")
-
- # Make predictions on the test data 
-test = pd.read_json('input/test.json')
-pred = model.predict(test)
-test['year'] = pred
-test.to_json("predictions/final.json", orient='records', indent=2)
