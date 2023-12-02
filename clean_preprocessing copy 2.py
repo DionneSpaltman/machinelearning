@@ -171,7 +171,7 @@ def main():
     # -------------------------------------------------New feature: number of editors-------------------------------------------------#
 
     #editor_count = train['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
-    # train['editor_count'] = train['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
+    train['editor_count'] = train['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 
 
 
@@ -187,7 +187,7 @@ def main():
             ("abstract_lower", "passthrough", ["abstract_lower"]),
             ("abstract_processed", CountVectorizer(), "abstract"),
             ("author_features", "passthrough", ["author_count"] + [f'author_{author}' for author in prolific_authors]),
-            #("editor_features", "passthrough", ["editor_count"] + [f'editor_{editor}' for editor in frequent_editors])
+            ("editor_features", "passthrough", ["editor_count"] + [f'editor_{editor}' for editor in frequent_editors])
             ],
         remainder='drop')
 
