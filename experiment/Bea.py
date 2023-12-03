@@ -3,11 +3,11 @@
 
 """changes:
 ABSTRACT: fill missing values with no_abstract + use countVectonizer
- + also variable len of abstarct + max_features to 1000
-TITLE: max features to 1000 + use_idf=False
+ + also variable len of abstarct + max_features to 2000
+TITLE: max features to 2000 + use_idf=False
 EDITOR: adding editor column with just number of editors
 
---> error in total decreased from 3.53 to 3.321"""
+--> error in total decreased from 3.53 to 3.274"""
 
 # max_features to 1000 = 3.321
 # max_features to 2000 = 3.277
@@ -153,7 +153,7 @@ data['abstract_processed'] = data['abstract'].fillna('no_abstract').str.lower()
 data['abstract_length'] = data['abstract_processed'].apply(len)
 
 # Feature Extraction: TF-IDF for 'abstract'
-abstract_vectorizer = CountVectorizer(stop_words='english', max_features=1000)  # Limit features to 1000
+abstract_vectorizer = CountVectorizer(stop_words='english', max_features=2000)  # Limit features to 1000
 abstract_tfidf = abstract_vectorizer.fit_transform(data['abstract_processed'])
 
 # Convert 'abstract' TF-IDF to DataFrame

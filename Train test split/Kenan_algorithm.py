@@ -376,8 +376,6 @@ abstract_tfidf_df = pd.DataFrame(abstract_tfidf.toarray(), columns=[f'abstract{i
 
 import pandas as pd
 from sklearn.feature_extraction.text import HashingVectorizer
-from transformers import DistilBertTokenizer, DistilBertModel
-import torch
 
 
 # -------------------------------------------------Random Forest-------------------------------------------------#
@@ -387,16 +385,8 @@ import torch
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
-from sklearn.svm import SVR
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.linear_model import SGDClassifier
-from sklearn.linear_model import SGDRegressor
-from sklearn.ensemble import AdaBoostRegressor
 from sklearn.metrics import mean_absolute_error
-from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import KBinsDiscretizer
+
 #import xgboost as xgb
 # import tensorflow as tf
 # from tensorflow.keras.models import Sequential
@@ -426,7 +416,7 @@ weights = y / y.max()
 X_train, X_test, y_train, y_test, weights_train, weights_test = train_test_split(X, y, weights, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42)
+model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
 # RandomForestRegressor(n_estimators=250, n_jobs=-1, random_state=42) --> 3.2550
 # RandomForestRegressor(n_estimators=150, n_jobs=-1, random_state=42) --> 3.2639
 # RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42) --> 4.5494
