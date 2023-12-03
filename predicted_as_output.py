@@ -203,10 +203,6 @@ test_editor_count = test_data['editor'].apply(lambda x: len(x) if isinstance(x, 
 test_data.drop('editor', axis=1, inplace=True)
 test_editor_count.info()
 
-###
-###
-###
-
 # MODEL: RANDOM FOREST
 
 # Dataset
