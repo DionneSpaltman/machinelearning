@@ -23,8 +23,10 @@ from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
+import json
 
 # -------------------------------------------------Whole data-------------------------------------------------#
+test = pd.DataFrame.from_records(json.load(open('input/test.json'))).fillna("")
 
 data = pd.read_json('input/train.json')
 print(data.head())
@@ -424,7 +426,7 @@ weights = y / y.max()
 X_train, X_test, y_train, y_test, weights_train, weights_test = train_test_split(X, y, weights, test_size=0.2, random_state=42)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
+model = RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42)
 # RandomForestRegressor(n_estimators=250, n_jobs=-1, random_state=42) --> 3.2550
 # RandomForestRegressor(n_estimators=150, n_jobs=-1, random_state=42) --> 3.2639
 # RandomForestRegressor(n_estimators=200, max_depth = 3, n_jobs=-1, random_state=42) --> 4.5494
@@ -518,7 +520,6 @@ mae = mean_absolute_error(y_test_original_scale, y_pred_original_scale)
 print(f"Mean Absolute Error: {mae}")
 
  # Make predictions on the test data 
-test = pd.read_json('input/test.json')
 pred = model.predict(test)
 test['year'] = pred
 test.to_json("predictions/final.json", orient='records', indent=2)
