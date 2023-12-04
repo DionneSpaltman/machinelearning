@@ -203,6 +203,10 @@ test_editor_count = test_data['editor'].apply(lambda x: len(x) if isinstance(x, 
 test_data.drop('editor', axis=1, inplace=True)
 test_editor_count.info()
 
+###
+###
+###
+
 # MODEL: RANDOM FOREST
 
 # Dataset
@@ -213,7 +217,7 @@ y = data['year']
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=1000, n_jobs=-1, random_state=0)
+model = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=0)
 
 # Train the model
 model.fit(X_train, y_train)
@@ -225,18 +229,29 @@ y_pred = model.predict(X_val)
 mae = mean_absolute_error(y_val, y_pred)
 print(f"Mean Absolute Error on the validation set: {mae}")
 
+# PREDICTING ON THE TEST DATA
+X_test = pd.concat([entrytype_dummies.iloc[:len(test_data),:], publisher_dummies.iloc[:len(test_data),:], author_dummies.iloc[:len(test_data),:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[:len(test_data),:], test_editor_count], axis=1).copy()
+X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
+
+test_predictions = model.predict(X_test)
+
+# OUTPUT
+
+# Output only the year:
+year_predictions_df = pd.DataFrame({'year': test_predictions})
+
+# Output to predicted.json file
+year_predictions_df.to_json("predictions/testpredictednotrounder.json", orient='records', indent=2)
+
+'''
+ADJUSTED FOR BIAS
+
 # Calculate the errors
 errors = y_val - y_pred
 
 # Calculate the mean error
 mean_error = errors.mean()
 mean_error
-
-# PREDICTING ON THE TEST DATA
-X_test = pd.concat([entrytype_dummies.iloc[:len(test_data),:], publisher_dummies.iloc[:len(test_data),:], author_dummies.iloc[:len(test_data),:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[:len(test_data),:], test_editor_count], axis=1).copy()
-X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
-
-test_predictions = model.predict(X_test)
 
 # Adjust predictions by the mean error
 adjusted_predictions = test_predictions - mean_error
@@ -254,3 +269,4 @@ year_predictions_df = pd.DataFrame({'year': final_predictions_rounded})
 
 # Output to predicted.json file
 year_predictions_df.to_json("predictions/testpredicted.json", orient='records', indent=2)
+'''
