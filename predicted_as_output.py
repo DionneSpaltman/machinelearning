@@ -217,7 +217,7 @@ y = data['year']
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=0)
+model = RandomForestRegressor(n_estimators=30, n_jobs=-1, random_state=0, max_depth=3)
 
 # Train the model
 model.fit(X_train, y_train)
@@ -230,18 +230,21 @@ mae = mean_absolute_error(y_val, y_pred)
 print(f"Mean Absolute Error on the validation set: {mae}")
 
 # PREDICTING ON THE TEST DATA
+
+X_train = X
+y_train = y
+
+model = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=0)
+model.fit(X_train, y_train)
+
 X_test = pd.concat([entrytype_dummies.iloc[:len(test_data),:], publisher_dummies.iloc[:len(test_data),:], author_dummies.iloc[:len(test_data),:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[:len(test_data),:], test_editor_count], axis=1).copy()
 X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
 
-test_predictions = model.predict(X_test)
+y_test = model.predict(X_test)
 
-# OUTPUT
+year_predictions_df = pd.DataFrame({'year': y_test})
 
-# Output only the year:
-year_predictions_df = pd.DataFrame({'year': test_predictions})
-
-# Output to predicted.json file
-year_predictions_df.to_json("predictions/testpredictednotrounder.json", orient='records', indent=2)
+year_predictions_df.to_json('predictions/newpredicted3.json', orient='records', indent=2)
 
 '''
 ADJUSTED FOR BIAS
