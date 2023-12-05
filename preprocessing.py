@@ -401,7 +401,7 @@ print(f"Mean Absolute Error with best model: {mae}")
 # -------------------------------------------------Cross-validation (5-fold)-------------------------------------------------#
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42)
+model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=42, max_depth=3)
 
 # Define the number of folds for cross-validation
 num_folds = 5
@@ -417,6 +417,14 @@ std_dev_mae = mae_scores.std()
 
 print(f"Average MAE from cross-validation: {average_mae}")
 print(f"Standard Deviation of MAE from cross-validation: {std_dev_mae}")
+
+
+# Make predictions on the test data 
+test = pd.read_json('input/test.json')
+pred = model.predict(test)
+test['year'] = pred
+test.to_json("predictions/final.json", orient='records', indent=2)
+
 
 # Average MAE from Cross-Validation = 3.44, STDev 0.05
 # Cross Validation Seems to Indicate no overfitting. If anything, in some split, 
