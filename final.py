@@ -22,7 +22,7 @@ test_data = pd.read_json('input/test.json')
 # Entrytype has three unique options. We decided to one-hot encode it 
 all_entrytypes = pd.concat([train['ENTRYTYPE'], test_data['ENTRYTYPE']], axis=0)
 
-# One-hot encode 'ENTRYTYPE' and concatenate with the original DataFrame
+# One-hot encode 'ENTRYTYPE' 
 entrytype_dummies = pd.get_dummies(all_entrytypes, prefix='entrytype')
 
 # Drop the original 'ENTRYTYPE' column
@@ -47,14 +47,12 @@ test_data.drop('publisher', axis=1, inplace=True)
 # -------------------------------------------------Feature: author-------------------------------------------------#
 # Make it a set to get unique authors
 complete_authors = pd.concat([train['author'], test_data['author']], axis=0)
-
 all_authors = set()
 for authors_list in complete_authors.dropna():
     all_authors.update(authors_list)
     
 # Count how many times each author appears
 author_frequencies = Counter()
-
 for authors_list in complete_authors.dropna():
     author_frequencies.update(authors_list)
 
