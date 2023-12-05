@@ -2,7 +2,7 @@ import time
 from sys import argv
 import pandas as pd
 from baseline import baseline
-from baseline_improved import baseline_improved
+from bin.baseline_improved import baseline_improved
 from randomforest_chatgpt import randomforest_chatgpt
 from bin.perceptron2 import perceptron
 from splitdata20_80 import splitdata20_80
