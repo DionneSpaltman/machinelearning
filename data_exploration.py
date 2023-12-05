@@ -250,30 +250,205 @@ year_predictions_df = pd.DataFrame({'year': y_test})
 
 year_predictions_df.to_json('predictions/newpredicted3.json', orient='records', indent=2)
 
-'''
-ADJUSTED FOR BIAS
 
-# Calculate the errors
-errors = y_val - y_pred
 
-# Calculate the mean error
-mean_error = errors.mean()
-mean_error
+#### PLOTS ############
 
-# Adjust predictions by the mean error
-adjusted_predictions = test_predictions - mean_error
 
-# Round predictions to the nearest integer after adjustment
-final_predictions_rounded = np.round(adjusted_predictions).astype(int)
+# APPENDIX 1: DISTRIBUTION OF YEAR
 
-# Assign the adjusted and rounded predictions
-test_data['year'] = final_predictions_rounded
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+x = pd.read_json('input/train.json')
+print(x.describe())
+print(x.columns)
+x_year = x["year"]
+print(x_year)
 
-# OUTPUT
+counts_df = x['year'].value_counts().reset_index()
+counts_df.columns = ['Year', 'Count']
 
-# Output only the year:
-year_predictions_df = pd.DataFrame({'year': final_predictions_rounded})
+print(counts_df)
+print(x.shape)
+print(x.info())
+print(x.head())
+print(x.isnull().sum()/65914)
 
-# Output to predicted.json file
-year_predictions_df.to_json("predictions/testpredicted.json", orient='records', indent=2)
-'''
+# Plotting the distribution of year
+plt.hist(x_year, bins=30, density=True, alpha=0.7, color='blue', edgecolor='black')
+sns.kdeplot(x_year, color='red', label='PDF')
+
+# Add labels and a title
+plt.xlabel('Year')
+plt.ylabel('Frequency')
+plt.title('Distribution Plot')
+
+# Show the plot
+plt.show()
+
+
+# APPENDIX 2:
+
+# Display the frequency of each publisher
+publisher_counts = data['publisher'].value_counts()
+
+# Relationship Between Publisher and Year
+# Calculate mean year for each publisher
+mean_years = data.groupby('publisher')['year'].mean().sort_values()
+mean_years
+
+# Box Plot
+# Filter out to include only the top N publishers for a clearer plot
+top_publishers = publisher_counts.index[:20]
+top_publishers
+
+filtered_data = data[data['publisher'].isin(top_publishers)]
+filtered_data
+
+# Create a box plot
+plt.figure(figsize=(10, 5))
+sns.boxplot(x='publisher', y='year', data=filtered_data)
+plt.title('Distribution of Publication Years for Top Publishers')
+plt.xticks(rotation=60, ha='right')
+plt.tight_layout()
+plt.show()
+
+### APPENDIX 3: TOP PUBLISHERS
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+# Load your data into a pandas DataFrame
+# data = pd.read_json('input/train.json')
+
+# Assuming 'data' DataFrame is already created and has a 'publisher' column
+
+# Calculate the count of publications for each publisher
+publisher_counts = data['publisher'].value_counts()
+
+# Select the top 20 publishers
+top_publishers = publisher_counts.head(20)
+
+# Create a bar plot with seaborn
+plt.figure(figsize=(10, 6))
+sns.barplot(x=top_publishers.index, y=top_publishers.values, palette="viridis")
+
+# Set the title and labels
+plt.title('Number of Publications by Top 20 Publishers')
+plt.xlabel('Publisher')
+plt.ylabel('Number of Publications')
+
+# Rotate the x-axis labels for better readability
+plt.xticks(rotation=45, ha='right')
+
+# Use tight layout to ensure everything fits without overlapping
+plt.tight_layout()
+
+# Display the plot
+plt.show()
+
+
+# APPENDIX 4 -> Distribution of Authors by Number of Publications
+
+# Flatten the list of authors
+all_authors = set()
+for authors_list in data['author'].dropna():
+    all_authors.update(authors_list)
+
+len(all_authors)
+# Now all_authors contains all unique authors
+
+from collections import Counter
+
+# Initialize a Counter object to hold author frequencies
+author_frequencies = Counter()
+
+# Iterate through the author lists and update the counter
+for authors_list in data['author'].dropna():
+    author_frequencies.update(authors_list)
+
+# Now author_frequencies contains the count of each author
+author_frequencies
+
+# Determine the number of top authors you want to consider, e.g., top 100
+num_top_authors = 100
+
+# Get the most common authors
+most_common_authors = author_frequencies.most_common(num_top_authors)
+
+# Print the most common authors
+for author, count in most_common_authors:
+    print(f"{author}: {count}")
+
+most_common_authors
+
+# Assuming 'most_common_authors' contains your top authors
+top_authors = [author for author, count in most_common_authors]
+
+# Dictionary to hold year distribution data for each top author
+year_distributions = {}
+
+for author in top_authors:
+    # Filter data for the current author
+    author_data = data[data['author'].apply(lambda x: author in x if isinstance(x, list) else False)]
+    
+    # Get year distribution for this author
+    year_distributions[author] = author_data['year'].describe()
+
+year_distributions
+
+# Print the year distribution for each top author
+for author, distribution in year_distributions.items():
+    print(f"Year distribution for {author}:")
+    print(distribution, "\n")
+
+    
+# Categorizing authors based on publication count
+frequency_categories = {'1-5 publications': 0, '6-20 publications': 0, '21-50 publications': 0, '50-100 publications': 0, '100+ publications': 0}
+for count in author_frequencies.values():
+    if 1 <= count <= 5:
+        frequency_categories['1-5 publications'] += 1
+    elif 6 <= count <= 20:
+        frequency_categories['6-20 publications'] += 1
+    elif 21 <= count <= 50:
+        frequency_categories['21-50 publications'] += 1
+    elif 51 <= count <= 100:
+        frequency_categories['50-100 publications'] += 1
+    else:
+        frequency_categories['100+ publications'] +=1
+
+frequency_categories
+
+# Categories and counts for plotting
+categories, counts = zip(*frequency_categories.items())
+
+# Create a bar plot
+plt.figure(figsize=(10, 6))
+plt.bar(categories, counts, color='skyblue')
+plt.xlabel('Number of Publications')
+plt.ylabel('Number of Authors')
+plt.title('Distribution of Authors by Number of Publications')
+plt.show()
+
+# APPENDIX 5: 
+
+# Extracting feature importances
+feature_importances = model.feature_importances_
+
+# Matching feature names with their importances
+feature_names = X_train.columns
+importances = pd.Series(feature_importances, index=feature_names)
+
+# Sorting the features by their importance
+sorted_importances = importances.sort_values(ascending=False)
+
+# Visualizing the top 20 most important features
+plt.figure(figsize=(15, 3))
+sorted_importances[:20].plot(kind='bar')
+plt.title('Top 20 Feature Importances in Random Forest Model')
+plt.xlabel('Features')
+plt.ylabel('Importance')
+plt.show()
