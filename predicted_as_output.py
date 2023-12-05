@@ -252,30 +252,3 @@ year_predicted_df = pd.DataFrame(pred, columns=['year'])
 year_predicted_df.to_json('predictions/newpredicted4.json', orient='records', indent=2)
 
 # FEATURE IMPORTANCE OF THE VALIDATION DATA, just for discussion and validation
-
-# ... [previous code] ...
-
-# PREDICTING ON THE TEST DATA
-test_features = pd.concat([
-    entrytype_dummies.iloc[len(data):,:], 
-    publisher_dummies.iloc[len(data):,:], 
-    author_dummies.iloc[len(data):,:], 
-    test_author_count, 
-    test_title_processed, 
-    test_abstract_processed, 
-    test_abstract_length, 
-    editor_dummies.iloc[len(data):,:], 
-    test_editor_count
-], axis=1).copy()
-
-# Ensure that the columns match the training data
-test_features = test_features.reindex(columns=X_train.columns, fill_value=0)
-
-# Predicting the year
-predictions = model.predict(test_features)
-
-# Create a DataFrame with the predictions
-predictions_df = pd.DataFrame(predictions, columns=['year'])
-
-# Save the predictions to a JSON file
-predictions_df.to_json('predictions/year_predictions.json', orient='records', line_delimiter='\n', indent=2)
