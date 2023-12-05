@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
@@ -252,3 +253,22 @@ year_predicted_df = pd.DataFrame(pred, columns=['year'])
 year_predicted_df.to_json('predictions/newpredicted4.json', orient='records', indent=2)
 
 # FEATURE IMPORTANCE OF THE VALIDATION DATA, just for discussion and validation
+
+# Extracting feature importances
+feature_importances = model.feature_importances_
+
+# Matching feature names with their importances
+feature_names = X_train.columns
+importances = pd.Series(feature_importances, index=feature_names)
+
+# Sorting the features by their importance
+sorted_importances = importances.sort_values(ascending=False)
+
+# Visualizing the top 20 most important features
+plt.figure(figsize=(15, 3))
+sorted_importances[:20].plot(kind='bar')
+plt.title('Top 20 Feature Importances in Random Forest Model')
+plt.xlabel('Features')
+plt.ylabel('Importance')
+plt.xticks(rotation=45, ha='right')
+plt.show()
