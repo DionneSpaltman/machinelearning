@@ -36,7 +36,7 @@ def main():
 
     featurizer = ColumnTransformer(
         transformers=[("title", CountVectorizer(), "title"), 
-                        ("abstract", TfidfVectorizer(stop_words='english'), "abstract"), 
+                        ("abstract", TfidfVectorizer(), "abstract"), 
                         ("author", CountVectorizer(), "author")
                       ],
         remainder='drop')
