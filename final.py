@@ -1,11 +1,11 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
-
 """
 In this file you'll find 
 - Feature engineering 
@@ -79,13 +79,13 @@ author_count.info()
 # Drop the original 'author' column
 train.drop('author', axis=1, inplace=True)
 
-# -------------------------------------------------New feature: title-------------------------------------------------#
+# -------------------------------------------------Feature: title-------------------------------------------------#
 
 # Make Title Lower case
 title_lower_train = train['title'].str.lower()
 
 # Process the title with TF-IDF. Works better than hashing or count vectorizer
-vectorizer = TfidfVectorizer(stop_words='english', max_features=2000)
+vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
 title_tfidf_train = vectorizer.fit_transform(title_lower_train)
 
 # Convert to DataFrame to be used in the prediction
@@ -98,7 +98,7 @@ title_processed_train.info()
 abstract_lower_train = train['abstract'].fillna('no_abstract').str.lower()
 
 # Abstract - COUNT VECTORIZER
-abstract_vectorizer = CountVectorizer(stop_words='english', max_features=2000)
+abstract_vectorizer = CountVectorizer(stop_words='english', max_features=1000)
 abstract_processed_train = abstract_vectorizer.fit_transform(abstract_lower_train)
 
 # Convert to DataFrame to be used in the prediction
@@ -206,10 +206,10 @@ test_editor_count.info()
 # Validation
 X = pd.concat([entrytype_dummies.iloc[:len(train),:], publisher_dummies.iloc[:len(train),:], author_dummies.iloc[:len(train),:], author_count, title_processed_train, abstract_processed_train, abstract_length, editor_dummies.iloc[:len(train),:], editor_count], axis=1).copy()
 y = train['year']
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0, stratify=train['year'])
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=0)
+model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=0)
 
 # Train the model
 model.fit(X_train, y_train)
@@ -223,20 +223,20 @@ print(f"Mean Absolute Error on the validation set: {mae}")
 
 # -------------------------------------------------Predicting on test data -------------------------------------------------#
 
-X_train = X
-y_train = y
+test = pd.concat([entrytype_dummies.iloc[len(train):,:], publisher_dummies.iloc[len(train):,:], author_dummies.iloc[len(train):,:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[len(train):,:], test_editor_count], axis=1).copy()
+test = test.reindex(columns=X_train.columns, fill_value=0)
+test.fillna(0, inplace=True)
 
-model = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=0)
-model.fit(X_train, y_train)
+pred = model.predict(test)
 
-X_test = pd.concat([entrytype_dummies.iloc[:len(test_data),:], publisher_dummies.iloc[:len(test_data),:], author_dummies.iloc[:len(test_data),:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[:len(test_data),:], test_editor_count], axis=1).copy()
-X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
+if test.columns.duplicated().any():
+    print("Duplicate columns found: ", test.columns[test.columns.duplicated()])
+    test = test.loc[:,~test.columns.duplicated()]
 
-y_test = model.predict(X_test)
+year_predicted_df = pd.DataFrame(pred, columns=['year'])
 
-year_predictions_df = pd.DataFrame({'year': y_test})
-
-year_predictions_df.to_json('predictions/newpredicted3.json', orient='records', indent=2)
+# Save to a JSON file
+year_predicted_df.to_json('predictions/newpredicted5.json', orient='records', indent=2)
 
 '''
 ADJUSTED FOR BIAS
