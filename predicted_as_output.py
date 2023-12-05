@@ -209,7 +209,7 @@ test_editor_count.info()
 
 # MODEL: RANDOM FOREST
 
-# Dataset
+# Validation
 
 X = pd.concat([entrytype_dummies.iloc[:len(data),:], publisher_dummies.iloc[:len(data),:], author_dummies.iloc[:len(data),:], author_count, title_processed_train, abstract_processed_train, abstract_length, editor_dummies.iloc[:len(data),:], editor_count], axis=1).copy()
 y = data['year']
@@ -217,7 +217,7 @@ y = data['year']
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=30, n_jobs=-1, random_state=0, max_depth=3)
+model = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=0)
 
 # Train the model
 model.fit(X_train, y_train)
