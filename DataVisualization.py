@@ -1,6 +1,6 @@
-
 import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
@@ -8,29 +8,32 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 
+'''
+In this file, you will find the main code, followed by codes for data visualizations.
+The code for data visualization starts on line 238
+'''
+
+# Data is loaded (from the input folder)
 complete_data = pd.read_json('input/train.json')
-data = pd.read_json('input/train.json')
+train = pd.read_json('input/train.json')
 test_data = pd.read_json('input/test.json')
 
 # -------------------------------------------------Feature: entrytype-------------------------------------------------#
-# It has 3 unique features
-# So we one-hot encode the 'ENTRYTYPE' column
-all_entrytypes = pd.concat([data['ENTRYTYPE'], test_data['ENTRYTYPE']], axis=0)
+# Entrytype has three unique options. We decided to one-hot encode it 
+all_entrytypes = pd.concat([train['ENTRYTYPE'], test_data['ENTRYTYPE']], axis=0)
 
-# One-hot encode 'ENTRYTYPE' and concatenate with the original DataFrame
+# One-hot encode 'ENTRYTYPE' 
 entrytype_dummies = pd.get_dummies(all_entrytypes, prefix='entrytype')
 
 # Drop the original 'ENTRYTYPE' column
-data.drop('ENTRYTYPE', axis=1, inplace=True)
+train.drop('ENTRYTYPE', axis=1, inplace=True)
 test_data.drop('ENTRYTYPE', axis=1, inplace=True)
 
 entrytype_dummies.info()
 
-
-
 # -------------------------------------------------Feature: publisher-------------------------------------------------#
 # Impute the NA as 'unknown'
-all_publishers = pd.concat([data['publisher'], test_data['publisher']], axis=0)
+all_publishers = pd.concat([train['publisher'], test_data['publisher']], axis=0)
 all_publishers.fillna('Unknown', inplace=True)
 
 # One-hot encode the 'publisher' column
@@ -38,27 +41,25 @@ publisher_dummies = pd.get_dummies(all_publishers, prefix='publisher')
 publisher_dummies.info()
 
 # Drop the original 'publisher' column
-data.drop('publisher', axis=1, inplace=True)
+train.drop('publisher', axis=1, inplace=True)
 test_data.drop('publisher', axis=1, inplace=True)
 
 # -------------------------------------------------Feature: author-------------------------------------------------#
 # Make it a set to get unique authors
-complete_authors = pd.concat([data['author'], test_data['author']], axis=0)
-
+complete_authors = pd.concat([train['author'], test_data['author']], axis=0)
 all_authors = set()
 for authors_list in complete_authors.dropna():
     all_authors.update(authors_list)
     
 # Count how many times each author appears
 author_frequencies = Counter()
-
 for authors_list in complete_authors.dropna():
     author_frequencies.update(authors_list)
 
 # Set Prolific Authors (After trials, decided on 25+ Publications)    
 prolific_authors = [author for author, count in author_frequencies.items() if count >= 25]
 
-author_dummies = data.copy()
+author_dummies = train.copy()
 author_dummies.drop(['editor','title','year','abstract'], axis=1, inplace=True)
 
 # One-hot encode these authors
@@ -70,18 +71,16 @@ author_dummies = author_dummies.copy()
 author_dummies.info()
 
 # -------------------------------------------------New feature: author count-------------------------------------------------#
-
 # Could be a good predictor: newer publications are more collaborative
-author_count = data['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
+author_count = train['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 author_count.info()
 
 # Drop the original 'author' column
-data.drop('author', axis=1, inplace=True)
+train.drop('author', axis=1, inplace=True)
 
-# FEATURE: TITLE
-
+# -------------------------------------------------Feature: title-------------------------------------------------#
 # Make Title Lower case
-title_lower_train = data['title'].str.lower()
+title_lower_train = train['title'].str.lower()
 
 # Process the title with TF-IDF. Works better than hashing or count vectorizer
 vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
@@ -91,34 +90,29 @@ title_tfidf_train = vectorizer.fit_transform(title_lower_train)
 title_processed_train = pd.DataFrame(title_tfidf_train.toarray(), columns=vectorizer.get_feature_names_out())
 title_processed_train.info()
 
-# FEATURE: ABSTRACT
-
+# -------------------------------------------------Feature: abstract-------------------------------------------------#
 # Make lowercase for further processing
-abstract_lower_train = data['abstract'].fillna('no_abstract').str.lower()
+abstract_lower_train = train['abstract'].fillna('no_abstract').str.lower()
 
 # Abstract - COUNT VECTORIZER
-abstract_vectorizer = CountVectorizer(stop_words='english', max_features=1000)      # Change to Hashing vectorizer, 500 and 1000
+abstract_vectorizer = CountVectorizer(stop_words='english', max_features=1000)
 abstract_processed_train = abstract_vectorizer.fit_transform(abstract_lower_train)
 
 # Convert to DataFrame to be used in the prediction
 abstract_processed_train = pd.DataFrame(abstract_processed_train.toarray(), columns=abstract_vectorizer.get_feature_names_out())
 abstract_processed_train.info()
 
-
-# NEW FEATURE: LENGTH OF ABSTRACT
-
+# -------------------------------------------------New feature: Length of Abstract-------------------------------------------------#
 abstract_length = abstract_lower_train.apply(len)
 abstract_length.info()
 
-# NEW FEATURE: NUMBER OF EDITORS
-
+# -------------------------------------------------New feature: Number of Editors-------------------------------------------------#
 editor_count = complete_data['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 editor_count.info()
 
-# FEATURE: EDITOR
-
+# -------------------------------------------------Feature: Editor-------------------------------------------------#
 # Replace missing values with with 'Unknown'
-complete_editors = pd.concat([data['editor'], test_data['editor']], axis=0)
+complete_editors = pd.concat([train['editor'], test_data['editor']], axis=0)
 complete_editors.fillna('Unknown', inplace=True)
 
 # Make a set of unique editors
@@ -141,8 +135,8 @@ for editors_list in complete_editors:
 threshold = 5
 frequent_editors = [editor for editor, count in editor_frequencies.items() if count >= threshold]
 
-data.info()
-editor_dummies = data.copy()
+train.info()
+editor_dummies = train.copy()
 editor_dummies.info()
 
 for editor in frequent_editors:
@@ -152,25 +146,16 @@ editor_dummies.drop(['title','editor','year','abstract'], axis=1, inplace=True)
 editor_dummies.info()
 
 # Drop the original 'editor' column
-data.drop('editor', axis=1, inplace=True)
-
-
-###
-###
-###
+train.drop('editor', axis=1, inplace=True)
 
 # CLEANING TEST.JSON
-
-
 # -------------------------------------------------New feature: author count-------------------------------------------------#
-
 # Could be a good predictor: newer publications are more collaborative
 test_author_count = test_data['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 test_data.drop('author', axis=1, inplace=True)
 test_author_count.info()
 
-# FEATURE: TITLE
-
+# -------------------------------------------------New feature: Title-------------------------------------------------#
 # Make Title Lower case
 test_title_lower = test_data['title'].str.lower()
 
@@ -180,8 +165,7 @@ test_title_processed = pd.DataFrame(test_title_tfidf.toarray(), columns=vectoriz
 
 test_title_processed.info()
 
-# FEATURE: ABSTRACT
-
+# -------------------------------------------------Feature: abstract-------------------------------------------------#
 # Make Abstract Lower case for test data
 test_abstract_lower = test_data['abstract'].fillna('no_abstract').str.lower()
 
@@ -191,34 +175,31 @@ test_abstract_processed = pd.DataFrame(test_abstract_count.toarray(), columns=ab
 
 test_abstract_processed.info()
 
-
-# NEW FEATURE: LENGTH OF ABSTRACT
-
+# -------------------------------------------------New feature: Length of Abstract-------------------------------------------------#
 test_abstract_length = test_abstract_lower.apply(len)
 test_abstract_length.info()
 
-
-# NEW FEATURE: NUMBER OF EDITORS
-
+# -------------------------------------------------New feature: Number of Editors-------------------------------------------------#
 test_editor_count = test_data['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 test_data.drop('editor', axis=1, inplace=True)
 test_editor_count.info()
 
-###
-###
-###
-
-# MODEL: RANDOM FOREST
-
+# -------------------------------------------------Model: Random Forest-------------------------------------------------#
 # Validation
-
-X = pd.concat([entrytype_dummies.iloc[:len(data),:], publisher_dummies.iloc[:len(data),:], author_dummies.iloc[:len(data),:], author_count, title_processed_train, abstract_processed_train, abstract_length, editor_dummies.iloc[:len(data),:], editor_count], axis=1).copy()
-y = data['year']
-
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0)
+X = pd.concat([entrytype_dummies.iloc[:len(train),:],
+               publisher_dummies.iloc[:len(train),:],
+               author_dummies.iloc[:len(train),:],
+               author_count,
+               title_processed_train,
+               abstract_processed_train,
+               abstract_length,
+               editor_dummies.iloc[:len(train),:],
+               editor_count], axis=1).copy()
+y = train['year']
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0, stratify=train['year'])
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=0)
+model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=0)
 
 # Train the model
 model.fit(X_train, y_train)
@@ -230,49 +211,35 @@ y_pred = model.predict(X_val)
 mae = mean_absolute_error(y_val, y_pred)
 print(f"Mean Absolute Error on the validation set: {mae}")
 
-# FEATURE IMPORTANCE OF THE VALIDATION DATA, just for discussion and validation
+# -------------------------------------------------Predicting on test data -------------------------------------------------#
+test = pd.concat([entrytype_dummies.iloc[len(train):,:],
+                  publisher_dummies.iloc[len(train):,:],
+                  author_dummies.iloc[len(train):,:],
+                  test_author_count,
+                  test_title_processed,
+                  test_abstract_processed,
+                  test_abstract_length,
+                  editor_dummies.iloc[len(train):,:],
+                  test_editor_count], axis=1).copy()
+test = test.reindex(columns=X_train.columns, fill_value=0)
+test.fillna(0, inplace=True)
 
+pred = model.predict(test)
 
+if test.columns.duplicated().any():
+    print("Duplicate columns found: ", test.columns[test.columns.duplicated()])
+    test = test.loc[:,~test.columns.duplicated()]
 
-# PREDICTING ON THE TEST DATA
+year_predicted_df = pd.DataFrame(pred, columns=['year'])
 
-X_train = X
-y_train = y
+# Save to a JSON file
+year_predicted_df.to_json('predicted.json', orient='records', indent=2)
 
-model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=0)  # Do hyperparameter tuning
-model.fit(X_train, y_train)
-
-X_test = pd.concat([entrytype_dummies.iloc[:len(test_data),:], publisher_dummies.iloc[:len(test_data),:], author_dummies.iloc[:len(test_data),:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[:len(test_data),:], test_editor_count], axis=1).copy()
-X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
-
-y_test = model.predict(X_test)
-
-year_predictions_df = pd.DataFrame({'year': y_test})
-
-year_predictions_df.to_json('predictions/newpredicted3.json', orient='records', indent=2)
-
-
-
-
-
-
-
-
-
-
-
-
-
-#### PLOTS ############
-
+# -------------------------------------------------PLOTS-------------------------------------------------#
 
 # APPENDIX 1: DISTRIBUTION OF YEAR
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-x = pd.read_json('input/train.json')
+x = complete_data
 print(x.describe())
 print(x.columns)
 x_year = x["year"]
@@ -290,32 +257,25 @@ print(x.isnull().sum()/65914)
 # Plotting the distribution of year
 plt.hist(x_year, bins=30, density=True, alpha=0.7, color='blue', edgecolor='black')
 sns.kdeplot(x_year, color='red', label='PDF')
-
-# Add labels and a title
 plt.xlabel('Year')
 plt.ylabel('Frequency')
 plt.title('Distribution target variable')
-
-# Show the plot
 plt.show()
-
 
 # APPENDIX 2:
 
 # Display the frequency of each publisher
-publisher_counts = data['publisher'].value_counts()
+publisher_counts = complete_data['publisher'].value_counts()
 
-# Relationship Between Publisher and Year
 # Calculate mean year for each publisher
-mean_years = data.groupby('publisher')['year'].mean().sort_values()
+mean_years = complete_data.groupby('publisher')['year'].mean().sort_values()
 mean_years
 
-# Box Plot
 # Filter out to include only the top N publishers for a clearer plot
 top_publishers = publisher_counts.index[:20]
 top_publishers
 
-filtered_data = data[data['publisher'].isin(top_publishers)]
+filtered_data = complete_data[complete_data['publisher'].isin(top_publishers)]
 filtered_data
 
 # Create a box plot
@@ -326,96 +286,54 @@ plt.xticks(rotation=60, ha='right')
 plt.tight_layout()
 plt.show()
 
-### APPENDIX 3: TOP PUBLISHERS
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-
-# Load your data into a pandas DataFrame
-# data = pd.read_json('input/train.json')
-
-# Assuming 'data' DataFrame is already created and has a 'publisher' column
+# APPENDIX 3: TOP PUBLISHERS
 
 # Calculate the count of publications for each publisher
-publisher_counts = data['publisher'].value_counts()
+publisher_counts = complete_data['publisher'].value_counts()
 
 # Select the top 20 publishers
 top_publishers = publisher_counts.head(20)
 
-# Create a bar plot with seaborn
+# Create a bar plot
 plt.figure(figsize=(10, 6))
 sns.barplot(x=top_publishers.index, y=top_publishers.values, palette="viridis")
-
-# Set the title and labels
 plt.title('Number of Publications by Top 20 Publishers')
 plt.xlabel('Publisher')
 plt.ylabel('Number of Publications')
-
-# Rotate the x-axis labels for better readability
 plt.xticks(rotation=45, ha='right')
-
-# Use tight layout to ensure everything fits without overlapping
 plt.tight_layout()
-
-# Display the plot
 plt.show()
 
-
-# APPENDIX 4 -> Distribution of Authors by Number of Publications
+# APPENDIX 4: Distribution of Authors by Number of Publications
 
 # Flatten the list of authors
 all_authors = set()
-for authors_list in data['author'].dropna():
+for authors_list in complete_data['author'].dropna():
     all_authors.update(authors_list)
-
 len(all_authors)
-# Now all_authors contains all unique authors
 
-from collections import Counter
-
-# Initialize a Counter object to hold author frequencies
+# Calculation of author frequencies
 author_frequencies = Counter()
-
-# Iterate through the author lists and update the counter
-for authors_list in data['author'].dropna():
+for authors_list in complete_data['author'].dropna():
     author_frequencies.update(authors_list)
-
-# Now author_frequencies contains the count of each author
 author_frequencies
 
-# Determine the number of top authors you want to consider, e.g., top 100
+# Exploration of top publishers
 num_top_authors = 100
-
-# Get the most common authors
 most_common_authors = author_frequencies.most_common(num_top_authors)
-
-# Print the most common authors
 for author, count in most_common_authors:
     print(f"{author}: {count}")
-
-most_common_authors
-
-# Assuming 'most_common_authors' contains your top authors
 top_authors = [author for author, count in most_common_authors]
 
-# Dictionary to hold year distribution data for each top author
+# Exploration of the year distributions for top authors
 year_distributions = {}
-
 for author in top_authors:
-    # Filter data for the current author
-    author_data = data[data['author'].apply(lambda x: author in x if isinstance(x, list) else False)]
-    
-    # Get year distribution for this author
+    author_data = complete_data[complete_data['author'].apply(lambda x: author in x if isinstance(x, list) else False)]
     year_distributions[author] = author_data['year'].describe()
 
-year_distributions
-
-# Print the year distribution for each top author
 for author, distribution in year_distributions.items():
     print(f"Year distribution for {author}:")
     print(distribution, "\n")
-
     
 # Categorizing authors based on publication count
 frequency_categories = {'1-5 publications': 0, '6-20 publications': 0, '21-50 publications': 0, '50-100 publications': 0, '100+ publications': 0}
@@ -431,12 +349,9 @@ for count in author_frequencies.values():
     else:
         frequency_categories['100+ publications'] +=1
 
-frequency_categories
-
-# Categories and counts for plotting
 categories, counts = zip(*frequency_categories.items())
 
-# Create a bar plot
+# Create a bar plot to illustrate the relationship between top authors and number of publications 
 plt.figure(figsize=(10, 6))
 plt.bar(categories, counts, color='skyblue')
 plt.xlabel('Number of Publications')
@@ -444,7 +359,7 @@ plt.ylabel('Number of Authors')
 plt.title('Distribution of Authors by Number of Publications')
 plt.show()
 
-# APPENDIX 5: 
+# FEATURE IMPORTANCES
 
 # Extracting feature importances
 feature_importances = model.feature_importances_

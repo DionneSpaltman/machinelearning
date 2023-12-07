@@ -28,8 +28,6 @@ entrytype_dummies = pd.get_dummies(all_entrytypes, prefix='entrytype')
 train.drop('ENTRYTYPE', axis=1, inplace=True)
 test_data.drop('ENTRYTYPE', axis=1, inplace=True)
 
-entrytype_dummies.info()
-
 # -------------------------------------------------Feature: publisher-------------------------------------------------#
 # Impute the NA as 'unknown'
 all_publishers = pd.concat([train['publisher'], test_data['publisher']], axis=0)
@@ -37,7 +35,6 @@ all_publishers.fillna('Unknown', inplace=True)
 
 # One-hot encode the 'publisher' column
 publisher_dummies = pd.get_dummies(all_publishers, prefix='publisher')
-publisher_dummies.info()
 
 # Drop the original 'publisher' column
 train.drop('publisher', axis=1, inplace=True)
@@ -67,12 +64,10 @@ for author in prolific_authors:
 
 author_dummies.drop('author', axis=1, inplace=True)
 author_dummies = author_dummies.copy()
-author_dummies.info()
 
 # -------------------------------------------------New feature: author count-------------------------------------------------#
 # Newer publications are more collaborative
 author_count = train['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
-author_count.info()
 
 # Drop the original 'author' column
 train.drop('author', axis=1, inplace=True)
@@ -87,7 +82,6 @@ title_tfidf_train = vectorizer.fit_transform(title_lower_train)
 
 # Convert to DataFrame to be used in the prediction
 title_processed_train = pd.DataFrame(title_tfidf_train.toarray(), columns=vectorizer.get_feature_names_out())
-title_processed_train.info()
 
 # -------------------------------------------------Feature: abstract-------------------------------------------------#
 # Make lowercase for further processing
@@ -99,15 +93,12 @@ abstract_processed_train = abstract_vectorizer.fit_transform(abstract_lower_trai
 
 # Convert to DataFrame to be used in the prediction
 abstract_processed_train = pd.DataFrame(abstract_processed_train.toarray(), columns=abstract_vectorizer.get_feature_names_out())
-abstract_processed_train.info()
 
 # -------------------------------------------------New feature: Length of Abstract-------------------------------------------------#
 abstract_length = abstract_lower_train.apply(len)
-abstract_length.info()
 
 # -------------------------------------------------New feature: Number of Editors-------------------------------------------------#
 editor_count = complete_data['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
-editor_count.info()
 
 # -------------------------------------------------Feature: Editor-------------------------------------------------#
 # Replace missing values with with 'Unknown'
@@ -134,15 +125,12 @@ for editors_list in complete_editors:
 threshold = 5
 frequent_editors = [editor for editor, count in editor_frequencies.items() if count >= threshold]
 
-train.info()
 editor_dummies = train.copy()
-editor_dummies.info()
 
 for editor in frequent_editors:
     editor_dummies[f'editor_{editor}'] = editor_dummies['editor'].apply(lambda x: editor in x if isinstance(x, list) else editor == x)
 
 editor_dummies.drop(['title', 'editor', 'year', 'abstract'], axis=1, inplace=True)
-editor_dummies.info()
 
 # Drop the original 'editor' column
 train.drop('editor', axis=1, inplace=True)
@@ -154,7 +142,6 @@ train.drop('editor', axis=1, inplace=True)
 # Could be a good predictor: newer publications are more collaborative
 test_author_count = test_data['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 test_data.drop('author', axis=1, inplace=True)
-test_author_count.info()
 
 # -------------------------------------------------New feature: Title-------------------------------------------------#
 # Make Title Lower case
@@ -164,8 +151,6 @@ test_title_lower = test_data['title'].str.lower()
 test_title_tfidf = vectorizer.transform(test_title_lower)
 test_title_processed = pd.DataFrame(test_title_tfidf.toarray(), columns=vectorizer.get_feature_names_out())
 
-test_title_processed.info()
-
 # -------------------------------------------------Feature: abstract-------------------------------------------------#
 # Make Abstract Lower case for test data
 test_abstract_lower = test_data['abstract'].fillna('no_abstract').str.lower()
@@ -174,16 +159,12 @@ test_abstract_lower = test_data['abstract'].fillna('no_abstract').str.lower()
 test_abstract_count = abstract_vectorizer.transform(test_abstract_lower)
 test_abstract_processed = pd.DataFrame(test_abstract_count.toarray(), columns=abstract_vectorizer.get_feature_names_out())
 
-test_abstract_processed.info()
-
 # -------------------------------------------------New feature: Length of Abstract-------------------------------------------------#
 test_abstract_length = test_abstract_lower.apply(len)
-test_abstract_length.info()
 
 # -------------------------------------------------New feature: Number of Editors-------------------------------------------------#
 test_editor_count = test_data['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 test_data.drop('editor', axis=1, inplace=True)
-test_editor_count.info()
 
 # -------------------------------------------------Model: Random Forest-------------------------------------------------#
 # Validation
@@ -235,7 +216,6 @@ year_predicted_df = pd.DataFrame(pred, columns=['year'])
 
 # Save to a JSON file
 year_predicted_df.to_json('predicted.json', orient='records', indent=2)
-
 
 # ----------------------------------------------Predicting on Test Data and Tuning Hyperparameters------------------------------------------------#
 param_grid = {
