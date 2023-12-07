@@ -236,32 +236,4 @@ if test.columns.duplicated().any():
 year_predicted_df = pd.DataFrame(pred, columns=['year'])
 
 # Save to a JSON file
-year_predicted_df.to_json('predictions/newpredicted5.json', orient='records', indent=2)
-
-'''
-ADJUSTED FOR BIAS
-
-# Calculate the errors
-errors = y_val - y_pred
-
-# Calculate the mean error
-mean_error = errors.mean()
-mean_error
-
-# Adjust predictions by the mean error
-adjusted_predictions = test_predictions - mean_error
-
-# Round predictions to the nearest integer after adjustment
-final_predictions_rounded = np.round(adjusted_predictions).astype(int)
-
-# Assign the adjusted and rounded predictions
-test_data['year'] = final_predictions_rounded
-
-# OUTPUT
-
-# Output only the year:
-year_predictions_df = pd.DataFrame({'year': final_predictions_rounded})
-
-# Output to predicted.json file
-year_predictions_df.to_json("predictions/testpredicted.json", orient='records', indent=2)
-'''
+year_predicted_df.to_json('predicted.json', orient='records', indent=2)
