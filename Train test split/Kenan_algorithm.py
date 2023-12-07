@@ -38,6 +38,7 @@ print(data.info())
 print(data.describe())
 
 
+print(len(data))
 # -------------------------------------------------Year column-------------------------------------------------#
 
 # Distribution of the 'year' field
