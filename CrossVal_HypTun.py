@@ -3,13 +3,13 @@ from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
+
 """
-In this file you'll find 
-- Feature engineering 
-- Model: random forest (we deleted all of our experiments so this file is clean)
-- Predictions 
+In this file, you will find the main code, and Hyperparameter Tuning that includes Cross Validation
+The code for Hyperparameter Tuning can be found on line 239 onwards
 """
 
 # Data is loaded (from the input folder)
@@ -70,8 +70,7 @@ author_dummies = author_dummies.copy()
 author_dummies.info()
 
 # -------------------------------------------------New feature: author count-------------------------------------------------#
-
-# Could be a good predictor: newer publications are more collaborative
+# Newer publications are more collaborative
 author_count = train['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 author_count.info()
 
@@ -79,7 +78,6 @@ author_count.info()
 train.drop('author', axis=1, inplace=True)
 
 # -------------------------------------------------Feature: title-------------------------------------------------#
-
 # Make Title Lower case
 title_lower_train = train['title'].str.lower()
 
@@ -92,7 +90,6 @@ title_processed_train = pd.DataFrame(title_tfidf_train.toarray(), columns=vector
 title_processed_train.info()
 
 # -------------------------------------------------Feature: abstract-------------------------------------------------#
-
 # Make lowercase for further processing
 abstract_lower_train = train['abstract'].fillna('no_abstract').str.lower()
 
@@ -105,17 +102,14 @@ abstract_processed_train = pd.DataFrame(abstract_processed_train.toarray(), colu
 abstract_processed_train.info()
 
 # -------------------------------------------------New feature: Length of Abstract-------------------------------------------------#
-
 abstract_length = abstract_lower_train.apply(len)
 abstract_length.info()
 
 # -------------------------------------------------New feature: Number of Editors-------------------------------------------------#
-
 editor_count = complete_data['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 editor_count.info()
 
 # -------------------------------------------------Feature: Editor-------------------------------------------------#
-
 # Replace missing values with with 'Unknown'
 complete_editors = pd.concat([train['editor'], test_data['editor']], axis=0)
 complete_editors.fillna('Unknown', inplace=True)
@@ -147,7 +141,7 @@ editor_dummies.info()
 for editor in frequent_editors:
     editor_dummies[f'editor_{editor}'] = editor_dummies['editor'].apply(lambda x: editor in x if isinstance(x, list) else editor == x)
 
-editor_dummies.drop(['title','editor','year','abstract'], axis=1, inplace=True)
+editor_dummies.drop(['title', 'editor', 'year', 'abstract'], axis=1, inplace=True)
 editor_dummies.info()
 
 # Drop the original 'editor' column
@@ -155,15 +149,14 @@ train.drop('editor', axis=1, inplace=True)
 
 
 # CLEANING TEST.JSON
-# -------------------------------------------------New feature: author count-------------------------------------------------#
 
+# -------------------------------------------------New feature: author count-------------------------------------------------#
 # Could be a good predictor: newer publications are more collaborative
 test_author_count = test_data['author'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 test_data.drop('author', axis=1, inplace=True)
 test_author_count.info()
 
 # -------------------------------------------------New feature: Title-------------------------------------------------#
-
 # Make Title Lower case
 test_title_lower = test_data['title'].str.lower()
 
@@ -174,7 +167,6 @@ test_title_processed = pd.DataFrame(test_title_tfidf.toarray(), columns=vectoriz
 test_title_processed.info()
 
 # -------------------------------------------------Feature: abstract-------------------------------------------------#
-
 # Make Abstract Lower case for test data
 test_abstract_lower = test_data['abstract'].fillna('no_abstract').str.lower()
 
@@ -184,31 +176,31 @@ test_abstract_processed = pd.DataFrame(test_abstract_count.toarray(), columns=ab
 
 test_abstract_processed.info()
 
-
 # -------------------------------------------------New feature: Length of Abstract-------------------------------------------------#
 test_abstract_length = test_abstract_lower.apply(len)
 test_abstract_length.info()
 
-
 # -------------------------------------------------New feature: Number of Editors-------------------------------------------------#
-
 test_editor_count = test_data['editor'].apply(lambda x: len(x) if isinstance(x, list) else 0)
 test_data.drop('editor', axis=1, inplace=True)
 test_editor_count.info()
 
-###
-###
-###
-
 # -------------------------------------------------Model: Random Forest-------------------------------------------------#
-
 # Validation
-X = pd.concat([entrytype_dummies.iloc[:len(train),:], publisher_dummies.iloc[:len(train),:], author_dummies.iloc[:len(train),:], author_count, title_processed_train, abstract_processed_train, abstract_length, editor_dummies.iloc[:len(train),:], editor_count], axis=1).copy()
+X = pd.concat([entrytype_dummies.iloc[:len(train),:],
+               publisher_dummies.iloc[:len(train),:],
+               author_dummies.iloc[:len(train),:],
+               author_count,
+               title_processed_train,
+               abstract_processed_train,
+               abstract_length,
+               editor_dummies.iloc[:len(train),:],
+               editor_count], axis=1).copy()
 y = train['year']
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0, stratify=train['year'])
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=50, n_jobs=-1, random_state=0)
+model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=0)
 
 # Train the model
 model.fit(X_train, y_train)
@@ -221,8 +213,15 @@ mae = mean_absolute_error(y_val, y_pred)
 print(f"Mean Absolute Error on the validation set: {mae}")
 
 # -------------------------------------------------Predicting on test data -------------------------------------------------#
-
-test = pd.concat([entrytype_dummies.iloc[len(train):,:], publisher_dummies.iloc[len(train):,:], author_dummies.iloc[len(train):,:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[len(train):,:], test_editor_count], axis=1).copy()
+test = pd.concat([entrytype_dummies.iloc[len(train):,:],
+                  publisher_dummies.iloc[len(train):,:],
+                  author_dummies.iloc[len(train):,:],
+                  test_author_count,
+                  test_title_processed,
+                  test_abstract_processed,
+                  test_abstract_length,
+                  editor_dummies.iloc[len(train):,:],
+                  test_editor_count], axis=1).copy()
 test = test.reindex(columns=X_train.columns, fill_value=0)
 test.fillna(0, inplace=True)
 
@@ -235,13 +234,10 @@ if test.columns.duplicated().any():
 year_predicted_df = pd.DataFrame(pred, columns=['year'])
 
 # Save to a JSON file
-year_predicted_df.to_json('predictions/newpredicted6.json', orient='records', indent=2)
+year_predicted_df.to_json('predicted.json', orient='records', indent=2)
 
 
 # ----------------------------------------------Predicting on Test Data and Tuning Hyperparameters------------------------------------------------#
-
-from sklearn.model_selection import GridSearchCV
-
 param_grid = {
     'n_estimators': [100, 200, 300, 400],
     'max_depth': [None, 5, 10, 15, 20],
@@ -252,7 +248,6 @@ param_grid = {
     'min_impurity_decrease': [0.0, 0.1, 0.01]
 }
 
-# Initialize the Random Forest Regressor
 rf = RandomForestRegressor(random_state=0)
 
 # Create the grid search object
@@ -274,8 +269,16 @@ y_pred = best_rf.predict(X_val)
 mae = mean_absolute_error(y_val, y_pred)
 print(f"Mean Absolute Error on the validation set: {mae}")
 
-# Prepare the test data like you prepared the training data before predicting
-test_prepared = pd.concat([entrytype_dummies.iloc[len(train):,:], publisher_dummies.iloc[len(train):,:], author_dummies.iloc[len(train):,:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[len(train):,:], test_editor_count], axis=1)
+# Prepare the test data
+test_prepared = pd.concat([entrytype_dummies.iloc[len(train):,:],
+                           publisher_dummies.iloc[len(train):,:],
+                           author_dummies.iloc[len(train):,:],
+                           test_author_count,
+                           test_title_processed,
+                           test_abstract_processed,
+                           test_abstract_length,
+                           editor_dummies.iloc[len(train):,:],
+                           test_editor_count], axis=1)
 test_prepared = test_prepared.reindex(columns=X_train.columns, fill_value=0)
 test_prepared.fillna(0, inplace=True)
 
@@ -283,10 +286,8 @@ test_prepared.fillna(0, inplace=True)
 test_predictions = best_rf.predict(test_prepared)
 
 # -------------------------------------------------Save predictions to a JSON file------------------------------------------------#
-
 # Convert predictions to DataFrame
 submission = pd.DataFrame(test_predictions, columns=['year'])
 
 # Save the DataFrame to a JSON file
-submission.to_json('predictions/newpredicted7.json', orient='records', indent=2)
-
+submission.to_json('predicted.json', orient='records', indent=2)
