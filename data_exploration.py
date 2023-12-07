@@ -1,3 +1,4 @@
+
 import pandas as pd
 import numpy as np
 from collections import Counter
@@ -252,6 +253,16 @@ year_predictions_df.to_json('predictions/newpredicted3.json', orient='records', 
 
 
 
+
+
+
+
+
+
+
+
+
+
 #### PLOTS ############
 
 
@@ -283,7 +294,7 @@ sns.kdeplot(x_year, color='red', label='PDF')
 # Add labels and a title
 plt.xlabel('Year')
 plt.ylabel('Frequency')
-plt.title('Distribution Plot')
+plt.title('Distribution target variable')
 
 # Show the plot
 plt.show()
