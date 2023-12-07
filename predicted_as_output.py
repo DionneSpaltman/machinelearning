@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from collections import Counter
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
@@ -96,7 +98,7 @@ title_processed_train.info()
 abstract_lower_train = data['abstract'].fillna('no_abstract').str.lower()
 
 # Abstract - COUNT VECTORIZER
-abstract_vectorizer = CountVectorizer(stop_words='english', max_features=1000)      # Change to Hashing vectorizer, 500 and 1000
+abstract_vectorizer = CountVectorizer(stop_words='english', max_features=2000)
 abstract_processed_train = abstract_vectorizer.fit_transform(abstract_lower_train)
 
 # Convert to DataFrame to be used in the prediction
@@ -214,10 +216,12 @@ test_editor_count.info()
 X = pd.concat([entrytype_dummies.iloc[:len(data),:], publisher_dummies.iloc[:len(data),:], author_dummies.iloc[:len(data),:], author_count, title_processed_train, abstract_processed_train, abstract_length, editor_dummies.iloc[:len(data),:], editor_count], axis=1).copy()
 y = data['year']
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=0)
+X.info()
+
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, stratify=data['year'], random_state=0)
 
 # Initialize the Random Forest Regressor
-model = RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=0)
+model = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=0)
 
 # Train the model
 model.fit(X_train, y_train)
@@ -229,51 +233,42 @@ y_pred = model.predict(X_val)
 mae = mean_absolute_error(y_val, y_pred)
 print(f"Mean Absolute Error on the validation set: {mae}")
 
-# FEATURE IMPORTANCE OF THE VALIDATION DATA, just for discussion and validation
-
-
 
 # PREDICTING ON THE TEST DATA
+test = pd.concat([entrytype_dummies.iloc[len(data):,:], publisher_dummies.iloc[len(data):,:], author_dummies.iloc[len(data):,:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[len(data):,:], test_editor_count], axis=1).copy()
+test = test.reindex(columns=X_train.columns, fill_value=0)
+test.fillna(0, inplace=True)
 
-X_train = X
-y_train = y
+pred = model.predict(test)
 
-model = RandomForestRegressor(n_estimators=100, n_jobs=-1, random_state=0)  # Do hyperparameter tuning
-model.fit(X_train, y_train)
+if test.columns.duplicated().any():
+    print("Duplicate columns found: ", test.columns[test.columns.duplicated()])
+    test = test.loc[:,~test.columns.duplicated()]
 
-X_test = pd.concat([entrytype_dummies.iloc[:len(test_data),:], publisher_dummies.iloc[:len(test_data),:], author_dummies.iloc[:len(test_data),:], test_author_count, test_title_processed, test_abstract_processed, test_abstract_length, editor_dummies.iloc[:len(test_data),:], test_editor_count], axis=1).copy()
-X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
+test['year'] = pred
 
-y_test = model.predict(X_test)
+year_predicted_df = pd.DataFrame(pred, columns=['year'])
 
-year_predictions_df = pd.DataFrame({'year': y_test})
+# Save to a JSON file
+year_predicted_df.to_json('predictions/newpredicted4.json', orient='records', indent=2)
 
-year_predictions_df.to_json('predictions/newpredicted3.json', orient='records', indent=2)
+# FEATURE IMPORTANCE OF THE VALIDATION DATA, just for discussion and validation
 
-'''
-ADJUSTED FOR BIAS
+# Extracting feature importances
+feature_importances = model.feature_importances_
 
-# Calculate the errors
-errors = y_val - y_pred
+# Matching feature names with their importances
+feature_names = X_train.columns
+importances = pd.Series(feature_importances, index=feature_names)
 
-# Calculate the mean error
-mean_error = errors.mean()
-mean_error
+# Sorting the features by their importance
+sorted_importances = importances.sort_values(ascending=False)
 
-# Adjust predictions by the mean error
-adjusted_predictions = test_predictions - mean_error
-
-# Round predictions to the nearest integer after adjustment
-final_predictions_rounded = np.round(adjusted_predictions).astype(int)
-
-# Assign the adjusted and rounded predictions
-test_data['year'] = final_predictions_rounded
-
-# OUTPUT
-
-# Output only the year:
-year_predictions_df = pd.DataFrame({'year': final_predictions_rounded})
-
-# Output to predicted.json file
-year_predictions_df.to_json("predictions/testpredicted.json", orient='records', indent=2)
-'''
+# Visualizing the top 20 most important features
+plt.figure(figsize=(15, 3))
+sorted_importances[:20].plot(kind='bar')
+plt.title('Top 20 Feature Importances in Random Forest Model')
+plt.xlabel('Features')
+plt.ylabel('Importance')
+plt.xticks(rotation=45, ha='right')
+plt.show()
